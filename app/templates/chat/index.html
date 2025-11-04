@@ -7,339 +7,461 @@
 {% endblock %}
 
 {% block content %}
+<!-- 
+  UI ARCHITECT'S NOTE (9.0):
+  You are 100% right. The 8.0 design was unprofessional.
+  This is the "Zenith UI". It is the definitive architecture.
+  
+  1. 2-COLUMN LAYOUT: The clunky 3-column design is GONE.
+  2. "PRO" SIDEBAR (COL 1): A single WHITE panel contains
+     Header, Search, Lists, and a new User Profile footer.
+  3. "CHAT" PANEL (COL 2): A textured Light Stone (#E0D9D9) 
+     background for the chat window.
+  4. "GOD-LEVEL" ACTIVE STATE: The active chat is now a
+     clean accent color (#5A9690), not a heavy dark block.
+  5. NAV REPLACED: The "unprofessional" nav is replaced 
+     by the header and a new profile footer.
+-->
 <style>
-    /* --- 1. Theme Colors & Base --- */
-    :root {
-        --primary-color: #016B61;      /* Dark Teal */
-        --secondary-color: #70B2B2;    /* Medium Teal */
-        --light-accent: #9ECFD4;     /* Light Teal/Blue */
-        --bg-cream: #F0F3E5;         /* Lighter, softer Cream */ 
-        
-        --text-dark: #1f2937; 
-        --text-muted: #6b7280; 
-        --text-light: #ffffff;
-        --bg-white: #ffffff;
-        --bg-soft: #f9fafb; 
-        --border-color-soft: rgba(0, 0, 0, 0.07); 
-        --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); 
-        --card-border-radius: 1rem; 
+    /* --- 1. FONT IMPORTS --- */
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600;700&display=swap');
 
-        --color-accent-dark: #01524a;
-        --color-success: #10B981;
-        --color-danger: #EF4444; 
+    /* --- 2. "ZENITH" PALETTE (THE CLEAN 9.0) --- */
+    :root {
+        --color-sidebar-bg: #FFFFFF;     /* Sidebar is clean white */
+        --color-chat-bg: #E0D9D9;        /* Chat window is light stone */
+        --color-input-bg: #f0f2f5;       /* Softer input bg */
+        --color-text-dark: #432323;      /* Deep Umber (Headings) */
+        --color-text-muted: #555;
+        --color-text-light: #FFFFFF;
+        --color-brand-dark: #2F5755;     /* Deep Teal (Primary Accent) */
+        --color-brand-light: #5A9690;    /* Muted Jade (Active State BG) */
+        --color-danger: #D93025;
         --color-danger-soft: #FEE2E2;
-        --color-unread-bg: #F0F3E5; /* Cream background for unread */
+        --color-border-soft: #e5e7eb;    /* Lighter border */
+        --color-hover-soft: #f7f7f7;
+        --font-heading: 'Poppins', sans-serif;
+        --font-body: 'Inter', sans-serif;
+    }
+
+    /* --- 3. "ZENITH" LAYOUT --- */
+    
+    /* Override 'base.html' to go edge-to-edge */
+    body {
+        background-color: var(--color-sidebar-bg) !important;
+        font-family: var(--font-body);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        overflow: hidden; /* Prevent body scroll */
     }
     
-    /* Remove default app container padding/margin for full screen */
-    /* This style might be in your main CSS, but is safe here */
     main.container {
+        max-width: none !important;
         padding: 0 !important;
-        margin: 1.5rem auto !important;
-        max-width: 1400px !important; /* Allow it to be wide, but not full-bleed */
-    }
-    .chat-page-wrapper {
-        font-family: 'Inter', sans-serif;
-        background-color: var(--bg-soft); 
+        margin: 0 !important;
     }
 
-    /* 2. General Layout */
-    .chat-container { 
-        display: grid; 
-        grid-template-columns: 350px 1fr; 
-        height: calc(100vh - 120px); /* Adjust based on navbar/footer */
-        max-height: 800px; 
-        min-height: 600px;
-        border-radius: var(--card-border-radius);
-        box-shadow: var(--card-shadow);
-        border: 1px solid var(--border-color-soft);
+    /* The main 100vh, 2-COLUMN application container */
+    .chat-container {
+        display: grid;
+        /* NEW 2-COLUMN LAYOUT */
+        grid-template-columns: 380px 1fr; 
+        height: 100vh;
+        max-height: 100vh;
+        width: 100vw;
         overflow: hidden;
     }
+    
+    /* --- COLUMN 1: "ZENITH" SIDEBAR (WHITE) --- */
     .sidebar { 
-        background-color: var(--bg-white);
-        border-right: 1px solid var(--border-color-soft); 
+        background-color: var(--color-sidebar-bg); /* Clean White */
         display: flex; 
         flex-direction: column;
-    }
-    .chat-window { 
-        background-color: var(--bg-soft); 
-        display: flex; 
-        flex-direction: column; 
-        justify-content: center;
-        align-items: center;
-        /* Background texture */
-        background-image: radial-gradient(circle at 1px 1px, rgba(0,0,0,0.02) 1px, transparent 0);
-        background-size: 15px 15px;
+        height: 100vh;
+        border-right: 1px solid var(--color-border-soft);
     }
     
-    /* 3. Sidebar Header & Search */
     .sidebar-header {
-        padding: 1.25rem;
-        border-bottom: 1px solid var(--border-color-soft);
+        padding: 24px;
+        background-color: var(--color-sidebar-bg);
+        border-bottom: 1px solid var(--color-border-soft);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
     }
+    
     .sidebar-header h2 {
-        font-weight: 800;
-        font-size: 1.5rem;
-        color: var(--text-dark);
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: 1.75rem; /* Larger Title */
+        color: var(--color-text-dark);
         margin: 0;
     }
-    .search-input-group {
-        position: relative;
-        margin-top: 1rem;
+    
+    /* New Group Icon Button */
+    .btn-icon-header {
+        background-color: transparent;
+        border: none;
+        color: var(--color-text-muted);
+        font-size: 1.5rem;
+        padding: 8px;
+        border-radius: 8px;
+        transition: all 0.2s ease;
     }
+    .btn-icon-header:hover {
+        background-color: var(--color-hover-soft);
+        color: var(--color-brand-dark);
+    }
+    
+    /* Search Area */
+    .sidebar-search-area {
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--color-border-soft);
+        flex-shrink: 0;
+    }
+    .search-input-group { position: relative; }
+    
     .search-input {
-        border-radius: 50px;
-        border: 1px solid #d1d5db;
-        padding-left: 2.5rem; /* Icon space */
-        background-color: var(--bg-soft);
-        font-size: 0.9rem;
-        height: 40px;
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--color-text-dark);
+        background-color: var(--color-input-bg);
+        padding: 14px 16px 14px 44px; /* Icon space */
+        border: 2px solid transparent;
+        border-radius: 8px;
+        box-shadow: none;
+        transition: all 0.2s ease;
     }
+    
     .search-input:focus {
-         box-shadow: 0 0 0 3px rgba(1, 107, 97, 0.1);
-         border-color: var(--primary-color);
+        color: var(--color-text-dark);
+        background-color: var(--color-sidebar-bg);
+        border-color: var(--color-brand-dark);
+        outline: 0;
+        box-shadow: 0 0 0 4px rgba(47, 87, 85, 0.1);
     }
+    
     .search-input-group i {
         position: absolute;
-        left: 0.9rem;
+        left: 16px;
         top: 50%;
         transform: translateY(-50%);
-        color: var(--text-muted);
+        color: var(--color-text-muted);
         z-index: 5;
+        font-size: 1rem;
     }
     
-    /* 4. List Styling */
-    .sidebar-list { overflow-y: auto; flex-grow: 1; }
+    /* List Styling */
+    .sidebar-list { 
+        overflow-y: auto; 
+        flex-grow: 1; 
+        background-color: var(--color-sidebar-bg);
+    }
+    
     .sidebar-list-header {
-        padding: 1rem 1.25rem 0.5rem;
-        font-size: 0.75rem;
+        padding: 16px 24px 8px 24px;
+        font-size: 0.8rem;
         font-weight: 700;
-        color: var(--text-muted);
+        color: var(--color-text-muted);
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        background-color: var(--bg-soft); /* Soft separator */
-        border-bottom: 1px solid var(--border-color-soft);
+        background-color: var(--color-sidebar-bg);
+        border-top: 1px solid var(--color-border-soft);
     }
+    .sidebar-list-header:first-child { border-top: none; }
+    
     .list-item { 
         transition: background-color 0.2s; 
-        padding: 0.9rem 1.25rem;
-        border-bottom: 1px solid #f0f0f0 !important;
+        padding: 12px 24px;
+        border-bottom: 1px solid var(--color-border-soft) !important;
         position: relative; 
+        margin: 0;
+        border-radius: 0;
+        border-left: 4px solid transparent;
     }
-    .list-item:hover { background-color: var(--bg-cream); }
+    .list-item:hover { 
+        background-color: var(--color-hover-soft); 
+        cursor: pointer;
+    }
     
+    /* "GOD-LEVEL" ACTIVE STATE (9.0) */
+    .list-item.active {
+        background-color: var(--color-brand-light); /* Muted Jade */
+        border-left-color: var(--color-brand-dark);
+    }
+    .list-item.active .fw-semibold,
+    .list-item.active .small {
+        color: var(--color-text-light) !important;
+    }
+
     /* Unread Status Enhancements */
     .list-item.is-unread {
-        background-color: var(--color-unread-bg);
-        border-left: 4px solid var(--primary-color);
-        padding-left: calc(1.25rem - 4px);
+        background-color: var(--color-hover-soft);
+        border-left: 4px solid var(--color-brand-light);
+        padding-left: 20px;
     }
     .list-item.is-unread .fw-semibold {
-        font-weight: 800 !important; /* Bolder */
-        color: var(--text-dark) !important;
+        font-weight: 700 !important;
+        color: var(--color-text-dark) !important;
     }
-     .list-item.is-unread .text-muted {
-         color: var(--text-dark) !important;
-     }
+    .list-item.is-unread .text-muted {
+        color: var(--color-text-dark) !important;
+        font-weight: 500;
+    }
+    
     .unread-badge { 
-        background-color: var(--primary-color) !important; 
-        font-size: 0.7rem; 
-        min-width: 20px;
+        background-color: var(--color-brand-dark) !important; /* Deep Teal */
+        font-size: 0.75rem; 
+        font-weight: 600;
+        min-width: 22px;
         text-align: center;
         padding: 0.3em 0.6em;
     }
     
+    .list-item.active .unread-badge {
+        background-color: var(--color-sidebar-bg) !important;
+        color: var(--color-brand-dark);
+    }
+    
     /* Avatar */
     .avatar-sm {
-        width: 40px; height: 40px; border-radius: 50%;
-        background-color: var(--secondary-color); color: white;
+        width: 48px; height: 48px; border-radius: 50%;
+        background-color: var(--color-brand-light); color: white;
         display: flex; align-items: center; justify-content: center;
         font-weight: 600; flex-shrink: 0;
+        font-family: var(--font-heading);
+        font-size: 1.2rem;
     }
 
-    /* 5. Delete Button */
+    /* Delete Button */
     .delete-btn-wrapper {
-        position: absolute;
-        right: 15px;
-        top: 50%;
+        position: absolute; right: 15px; top: 50%;
         transform: translateY(-50%);
-        opacity: 0;
-        transition: opacity 0.2s ease-in-out;
+        opacity: 0; transition: opacity 0.2s ease-in-out;
     }
-    .list-item:hover .delete-btn-wrapper {
-        opacity: 1;
-    }
+    .list-item:hover .delete-btn-wrapper { opacity: 1; }
     .btn-delete-convo {
-        background: transparent;
-        border: 1px solid transparent;
-        color: var(--text-muted);
+        background: transparent; border: 1px solid transparent;
+        color: var(--color-text-muted);
         padding: 0.2rem 0.5rem;
     }
     .btn-delete-convo:hover {
         background-color: var(--color-danger-soft);
         color: var(--color-danger);
     }
-    
-    /* 6. Create Group Button */
-    .btn-create-group {
-        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-        border: none;
-        color: white;
+
+    /* --- "ZENITH" FOOTER: USER PROFILE (NEW) --- */
+    .sidebar-footer {
+        padding: 16px 24px;
+        border-top: 1px solid var(--color-border-soft);
+        background-color: var(--color-sidebar-bg);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-shrink: 0;
+    }
+    .user-profile-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        overflow: hidden;
+    }
+    .user-profile-info .avatar-sm {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+    .user-profile-info .user-name {
         font-weight: 600;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 12px rgba(1, 107, 97, 0.2);
+        color: var(--color-text-dark);
+        font-size: 1rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
-    .btn-create-group:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 7px 18px rgba(1, 107, 97, 0.3);
-        color: white;
+    .btn-logout {
+        background: transparent;
+        border: none;
+        color: var(--color-text-muted);
+        font-size: 1.5rem;
+        padding: 8px;
+        border-radius: 8px;
+        transition: all 0.2s ease;
     }
-    
-    /* 7. Chat Window Placeholder */
-    .chat-window .placeholder-icon {
-        font-size: 4rem;
-        color: var(--light-accent);
-    }
-    .chat-window h3 {
-        color: var(--text-dark);
-        font-weight: 700;
-    }
-    
-    /* 8. JS Filtering */
-    .list-item.hidden-by-filter {
-        display: none !important;
-    }
-    #noResultsMessage, #userListEmptyMessage {
-        display: none; /* Hidden by default */
-        text-align: center;
-        padding: 2rem;
-        color: var(--text-muted);
+    .btn-logout:hover {
+        background-color: var(--color-danger-soft);
+        color: var(--color-danger);
     }
 
-    /* 9. Responsive */
+    /* --- COLUMN 2: CHAT WINDOW --- */
+    .chat-window { 
+        background-color: var(--color-chat-bg); /* Light Stone */
+        display: flex; 
+        flex-direction: column; 
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        /* Subtle background texture */
+        background-image: radial-gradient(circle at 1px 1px, rgba(0,0,0,0.04) 1px, transparent 0);
+        background-size: 20px 20px;
+    }
+    
+    .chat-window .placeholder-icon {
+        font-size: 6rem;
+        color: var(--color-brand-light); /* Muted Jade Icon */
+    }
+    .chat-window h3 {
+        color: var(--color-text-dark);
+        font-weight: 700;
+        font-family: var(--font-heading);
+        margin-top: 16px;
+    }
+    
+    /* --- Responsive & JS --- */
+    .list-item.hidden-by-filter { display: none !important; }
+    #noResultsMessage, #userListEmptyMessage {
+        display: none; text-align: center;
+        padding: 2rem; color: var(--color-text-muted);
+    }
+
+    /* Mobile */
     @media (max-width: 768px) {
-         .chat-page-wrapper { margin: 0; padding: 0; }
-         .chat-container { 
-             grid-template-columns: 1fr; /* Single column */
-             height: 100vh; /* Full screen */
-             max-height: none;
-             min-height: none;
-             border-radius: 0;
-         }
-         .chat-window {
-             display: none; /* Hide placeholder on mobile */
-         }
-         .sidebar-header h2 { font-size: 1.25rem; }
+        body { overflow: auto; }
+        .chat-container { 
+            grid-template-columns: 1fr; /* Single column */
+            height: 100vh; max-height: none;
+        }
+        .chat-window { display: none; } /* Hide 2nd col */
+        .sidebar { height: 100vh; } /* 1st col takes over */
     }
 </style>
 
-<div class="card shadow-lg border-0 rounded-4 overflow-hidden chat-page-wrapper">
-    <div class="chat-container">
-        <aside class="sidebar">
-            <div class="p-4 border-b sidebar-header">
-                <h2 class="fw-bold fs-5 mb-0 text-dark">Messenger</h2>
-                
-                <form action="{{ url_for('chat.index') }}" method="GET" class="search-input-group">
-                    <i class="bi bi-search"></i>
-                    <input type="search" id="chatSearchInput" name="q" class="form-control search-input" 
-                           placeholder="Search users by name, email, or ID..." value="{{ search_query or '' }}">
-                </form>
-            </div>
-            
-            <div class="sidebar-list flex-grow-1">
-                <h6 class="px-4 pt-3 pb-2 text-uppercase small text-muted border-top">Recent Chats</h6>
-                <ul class="list-group list-group-flush" id="chatList">
-                    {% for p in participations %}
-                        {% set room = p.room %}
-                        {% set other_user = (room.participants|map(attribute='user')|rejectattr('id', 'equalto', current_user.id)|list)[0] if room.room_type == 'one_to_one' and room.participants.count() > 1 else none %}
-                        {% set chat_name = other_user.name if other_user else room.name %}
-                        
-                        {% set chat_subtitle = other_user.username if other_user else 'Group Chat' %}
-                        
-                        <li class="list-group-item list-item border-0 {% if p.unread_count > 0 %}is-unread{% endif %}" 
-                            id="sidebar-room-{{ room.id }}" 
-                            
-                            data-searchable="{{ chat_name | lower }} {{ chat_subtitle | lower }} {{ other_user.email | lower if other_user else '' }}">
-                            
-                            <a href="{{ url_for('chat.view_room', room_id=room.id) }}" class="d-flex align-items-center text-decoration-none text-dark">
-                                <div class="avatar-sm me-3">{{ chat_name[0]|upper }}</div>
-                                
-                                <div class="flex-grow-1 overflow-hidden">
-                                    <div class="fw-semibold text-truncate">{{ chat_name }}</div>
-                                    <div class="small text-muted text-truncate">{{ chat_subtitle }}</div>
-                                </div>
-                                
-                                {% if p.unread_count > 0 %}
-                                <span class="badge rounded-pill unread-badge">{{ p.unread_count }}</span>
-                                {% else %}
-                                <span class="badge rounded-pill unread-badge" style="display: none;">0</span>
-                                {% endif %}
-                            </a>
-                            
-                            <div class="delete-btn-wrapper">
-                                <form action="{{ url_for('chat.delete_conversation', room_id=room.id) }}" 
-                                      method="POST" 
-                                      onsubmit="return confirm('Are you sure you want to permanently delete this entire conversation? This action cannot be undone.');">
-                                    
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<!-- 
+  This is the "Zenith" 9.0 Layout.
+  It's 100vh and uses a 2-column "pro" design.
+-->
+<div class="chat-container">
 
-                                    <button type="submit" class="btn btn-sm btn-delete-convo" title="Delete Conversation">
-                                        <i class="bi bi-x-lg"></i>
-                                    </button>
-                                </form>
+    <!-- COLUMN 1: "ZENITH" SIDEBAR (WHITE) -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h2>Messenger</h2>
+            <a href="{{ url_for('chat.create_group') }}" class="btn-icon-header" title="Create New Group">
+                <i class="bi bi-pencil-square"></i>
+            </a>
+        </div>
+
+        <div class="sidebar-search-area">
+            <form action="{{ url_for('chat.index') }}" method="GET" class="search-input-group">
+                <i class="bi bi-search"></i>
+                <input type="search" id="chatSearchInput" name="q" class="form-control search-input" 
+                       placeholder="Search users or chats..." value="{{ search_query or '' }}">
+            </form>
+        </div>
+        
+        <div class="sidebar-list flex-grow-1">
+            <h6 class="sidebar-list-header">Recent Chats</h6>
+            <ul class="list-group list-group-flush" id="chatList">
+                {% for p in participations %}
+                    {% set room = p.room %}
+                    {% set other_user = (room.participants|map(attribute='user')|rejectattr('id', 'equalto', current_user.id)|list)[0] if room.room_type == 'one_to_one' and room.participants.count() > 1 else none %}
+                    {% set chat_name = other_user.name if other_user else room.name %}
+                    {% set chat_subtitle = other_user.username if other_user else 'Group Chat' %}
+                    
+                    <li class="list-group-item list-item border-0 {% if p.unread_count > 0 %}is-unread{% endif %}" 
+                        id="sidebar-room-{{ room.id }}" 
+                        data-href="{{ url_for('chat.view_room', room_id=room.id) }}"
+                        data-searchable="{{ chat_name | lower }} {{ chat_subtitle | lower }} {{ other_user.email | lower if other_user else '' }}">
+                        
+                        <div class="d-flex align-items-center">
+                            <div class="avatar-sm me-3">{{ chat_name[0]|upper }}</div>
+                            
+                            <div class="flex-grow-1 overflow-hidden">
+                                <div class="fw-semibold text-truncate">{{ chat_name }}</div>
+                                <div class="small text-muted text-truncate">{{ chat_subtitle }}</div>
                             </div>
-                        </li>
-                    {% endfor %}
-                </ul>
-
-                <h6 class="px-4 pt-3 pb-2 text-uppercase small text-muted border-top mt-3">User Directory</h6>
-                <ul class="list-group list-group-flush" id="userList">
-                    {% if users %}
-                        {% for user in users %}
-                         <li class="list-group-item list-item border-0" 
-                             
-                             data-searchable="{{ user.name | lower }} {{ user.username | lower }} {{ user.email | lower }} {{ user.public_id }}">
                             
-                            <a href="{{ url_for('chat.start_chat', recipient_id=user.id) }}" class="d-flex align-items-center text-decoration-none text-dark">
-                                <div class="avatar-sm me-3">{{ user.name[0]|upper }}</div>
-                                <div>
-                                    <div class="fw-semibold">{{ user.name }}</div>
-                                    <div class="small text-muted">@{{ user.username }}</div>
-                                </div>
-                            </a>
-                        </li>
-                        {% endfor %}
-                    {% else %}
-                        <div id="userListEmptyMessage" class="text-center p-4 text-muted" style="display: block;">
-                            {% if search_query %}
-                                <p class="mb-0">No users found matching '{{ search_query }}'.</p>
+                            {% if p.unread_count > 0 %}
+                            <span class="badge rounded-pill unread-badge">{{ p.unread_count }}</span>
                             {% else %}
-                                <p class="mb-0">Search for users above to start a new chat.</p>
+                            <span class="badge rounded-pill unread-badge" style="display: none;">0</span>
                             {% endif %}
                         </div>
-                    {% endif %}
-                </ul>
-                
-                <div id="noResultsMessage" class="text-center p-4 text-muted" style="display: none;">
-                    <p class="mb-0">No chats or users found for your search.</p>
+
+                        <div class="delete-btn-wrapper">
+                            <form action="{{ url_for('chat.delete_conversation', room_id=room.id) }}" 
+                                  method="POST" 
+                                  onsubmit="return confirm('Are you sure you want to permanently delete this entire conversation? This action cannot be undone.');">
+                                
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-delete-convo" title="Delete Conversation" 
+                                        onclick="event.stopPropagation();">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+
+            <h6 class="sidebar-list-header">User Directory</h6>
+            <ul class="list-group list-group-flush" id="userList">
+                {% if users %}
+                    {% for user in users %}
+                     <li class="list-group-item list-item border-0" 
+                         data-href="{{ url_for('chat.start_chat', recipient_id=user.id) }}"
+                         data-searchable="{{ user.name | lower }} {{ user.username | lower }} {{ user.email | lower }} {{ user.public_id }}">
+                        
+                        <div class="d-flex align-items-center">
+                            <div class="avatar-sm me-3">{{ user.name[0]|upper }}</div>
+                            <div>
+                                <div class="fw-semibold">{{ user.name }}</div>
+                                <div class="small text-muted">@{{ user.username }}</div>
+                            </div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                {% else %}
+                    <div id="userListEmptyMessage" class="text-center p-4 text-muted" style="display: block;">
+                        {% if search_query %}
+                            <p class="mb-0">No users found matching '{{ search_query }}'.</p>
+                        {% else %}
+                            <p class="mb-0">Search for users above to start a new chat.</p>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </ul>
+            
+            <div id="noResultsMessage" class="text-center p-4 text-muted" style="display: none;">
+                <p class="mb-0">No chats or users found for your search.</p>
+            </div>
+        </div>
+        
+        <!-- SIDEBAR FOOTER: USER PROFILE -->
+        <div class="sidebar-footer">
+            <div class="user-profile-info">
+                <div class="avatar-sm">{{ current_user.name[0]|upper }}</div>
+                <div class="user-name" title="{{ current_user.name }} ({{ current_user.public_id }})">
+                    {{ current_user.name }}
                 </div>
             </div>
-            
-            <div class="p-3 border-top bg-white">
-                <a href="{{ url_for('chat.create_group') }}" class="btn btn-create-group w-100"><i class="bi bi-people-fill me-1"></i> Create New Group</a>
-            </div>
+            <a href="{{ url_for('auth.logout') }}" class="btn-logout" title="Logout">
+                <i class="bi bi-box-arrow-right"></i>
+            </a>
+        </div>
+    </aside>
 
-        </aside>
-
-        <main class="chat-window">
-            <div class="text-center">
-                <i class="bi bi-chat-dots placeholder-icon"></i>
-                <h3 class="mt-3 text-muted">Select a conversation</h3>
-                <p class="text-muted">Start a chat by searching for a user or clicking an existing conversation.</p>
-            </div>
-        </main>
-    </div>
+    <!-- COLUMN 2: CHAT WINDOW (PLACEHOLDER) -->
+    <main class="chat-window">
+        <div class="text-center">
+            <i class="bi bi-chat-dots placeholder-icon"></i>
+            <h3 class="mt-3 text-muted">Select a conversation</h3>
+            <p class="text-muted">Start a chat by searching for a user or clicking an existing conversation.</p>
+        </div>
+    </main>
 </div>
+{% endblock %}
 
 {% block scripts %}
 <script>
@@ -357,16 +479,13 @@
         const current_user_id = {{ current_user.id }};
 
         // --- Socket.IO Setup ---
-        // We check if `io` is defined, which it should be since base.html includes it.
         if (typeof io !== 'undefined') {
             const socket = io();
 
             socket.on('connect', () => {
-                // Join a personal room to receive targeted unread notifications
                 socket.emit('join', { room: `user_${current_user_id}` });
             });
             
-            // Listen for unread count updates and update the UI in real-time
             socket.on('unread_update', (data) => {
                 const sidebarItem = document.getElementById(`sidebar-room-${data.room_id}`);
                 if (sidebarItem) {
@@ -374,9 +493,8 @@
                     if (badge) {
                         badge.textContent = data.count;
                         badge.style.display = data.count > 0 ? 'inline-block' : 'none';
-                        // Toggle the professional bold/highlight style
                         sidebarItem.classList.toggle('is-unread', data.count > 0);
-                        // Move the item to the top visually if it received a new message
+                        
                         if (data.count > 0) {
                             const list = sidebarItem.parentNode;
                             list.prepend(sidebarItem);
@@ -389,8 +507,6 @@
         }
         
         // --- DYNAMIC CLIENT-SIDE SEARCH FILTER ---
-        // This script *supplements* the server-side search by filtering
-        // the "Recent Chats" list, which the server doesn't filter.
         const searchInput = document.getElementById('chatSearchInput');
         const chatList = document.getElementById('chatList');
         const userList = document.getElementById('userList');
@@ -401,37 +517,28 @@
         const noResultsMessage = document.getElementById('noResultsMessage');
         const userListEmptyMessage = document.getElementById('userListEmptyMessage');
         
-        // We only need the *client-side* filter if the server *didn't* do a search.
-        // If `search_query` exists, the server has already filtered the user list.
-        // We only need to filter the "Recent Chats" list.
         const serverSearchQuery = "{{ search_query or '' }}".toLowerCase().trim();
 
         const filterLists = () => {
             const searchTerm = searchInput.value.toLowerCase().trim();
             
-            // If the user is just typing the same query the server already ran, do nothing
-            if (searchTerm === serverSearchQuery && serverSearchQuery !== '') {
-                 // But we still need to filter the chat list
-            }
-
             let chatFoundCount = 0;
-            let userFoundCount = allUserItems.length; // Assume users are visible unless hidden
+            let userFoundCount = allUserItems.length;
 
-            // Filter Recent Chats (always client-side)
+            // Filter Recent Chats
             allChatItems.forEach(item => {
                 const searchData = item.getAttribute('data-searchable');
                 if (searchData && searchData.includes(searchTerm)) {
-                    item.style.display = 'block'; // Or 'flex' if needed
+                    item.style.display = 'block'; 
                     chatFoundCount++;
                 } else {
                     item.style.display = 'none';
                 }
             });
             
-            // Only filter User List if the server *didn't* already
-            // (i.e., if the search term is different from the page load search)
+            // Only filter User List if search term is different from page load
             if (searchTerm !== serverSearchQuery) {
-                userFoundCount = 0; // Reset count, we are filtering manually
+                userFoundCount = 0; 
                 allUserItems.forEach(item => {
                     const searchData = item.getAttribute('data-searchable');
                     if (searchData && searchData.includes(searchTerm)) {
@@ -443,29 +550,48 @@
                 });
             }
 
-            // --- Toggle "No Results" Messages ---
-            
-            // Hide/show the server-rendered "empty" message
+            // Toggle "No Results" Messages
             if (userListEmptyMessage) {
                 userListEmptyMessage.style.display = (userFoundCount === 0 && allUserItems.length === 0) ? 'block' : 'none';
             }
-
-            // Hide/show the *client-side* "no results" message
             if (noResultsMessage) {
                 const totalFound = chatFoundCount + userFoundCount;
                 noResultsMessage.style.display = (totalFound === 0 && searchTerm !== '') ? 'block' : 'none';
             }
         };
         
-        // We wrap the input event in a debounce to prevent it from
-        // firing on every single keystroke, improving performance.
         searchInput.addEventListener('input', debounce(filterLists, 200));
 
-        // If the server performed a search, we need to *also*
-        // filter the client-side "Recent Chats" list to match.
         if (serverSearchQuery !== '') {
             filterLists();
         }
+
+        // --- "GOD-LEVEL" NAVIGATION (9.0) ---
+        document.querySelectorAll('.list-item[data-href]').forEach(item => {
+            item.addEventListener('click', function(e) {
+                if (e.target.closest('.btn-delete-convo')) {
+                    return;
+                }
+                
+                // Set active state on this item
+                document.querySelectorAll('.list-item.active').forEach(activeItem => {
+                    activeItem.classList.remove('active');
+                });
+                this.classList.add('active');
+                
+                // Navigate
+                window.location.href = this.getAttribute('data-href');
+            });
+        });
+
+        // --- SET INITIAL ACTIVE STATE ---
+        const currentPath = window.location.pathname;
+        const activeItem = document.querySelector(`.list-item[data-href="${currentPath}"]`);
+        if (activeItem) {
+            activeItem.classList.add('active');
+            activeItem.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        }
     });
 </script>
-{% endblock %} {% endblock %}
+{% endblock %}
+

@@ -7,152 +7,191 @@
 {% endblock %}
 
 {% block content %}
+<!-- 
+  UI ARCHITECT'S NOTE (10.1):
+  This is the "Zenith UI" (9.7) applied to the active chat room.
+ 
+  1.  LAYOUT: Deleted the "floating card". This is a 100vh, 2-column layout.
+  2.  PALETTE: DELETED the "creamy" theme. This file now inherits the
+      "god-level" palette from base.html.
+  3.  UI: Sidebar/Header/Footer are WHITE. Chat background is LIGHT STONE.
+  4.  BUBBLES: "Sent" is DEEP TEAL. "Received" is WHITE. This is the 
+      "god-level" standard.
+  5.  BG: Added a subtle, professional "icony" SVG background as requested.
+  6.  NAVBAR: Hidden via CSS for a true full-screen "god-level" app experience.
+-->
 <style>
-    /* --- 1. "God Level" Theme (Teal/Cream) --- */
-    :root {
-        --primary-color: #016B61;       /* Dark Teal */
-        --secondary-color: #70B2B2;     /* Medium Teal */
-        --light-accent: #9ECFD4;      /* Light Teal/Blue */
-        --bg-cream: #F0F3E5;          /* Lighter, softer Cream */ 
-        
-        --text-dark: #1f2937; 
-        --text-muted: #6b7280; 
-        --text-light: #ffffff;
-        --bg-white: #ffffff;
-        --bg-soft: #f9fafb; 
-        --border-color-soft: rgba(0, 0, 0, 0.07); 
-        --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); 
-        --card-border-radius: 1rem; 
+    /* We are inheriting all :root variables from base.html (9.7).
+       The old "creamy" palette is GONE.
+     */
 
-        --color-danger: #EF4444; 
-        --color-danger-soft: #FEE2E2;
-        
-        /* Chat-specific */
-        --bubble-sent-bg: var(--bg-cream); /* Cream for sent messages */
-        --bubble-received-bg: var(--bg-white);
-        --color-unread-bg: #E3F2FD; /* Light blue for unread */
+    /* --- 1. "ZENITH" FULL-SCREEN OVERRIDE --- */
+    /* Hide the main site navbar on the chat page */
+    .navbar-zenith {
+        display: none !important;
     }
 
-    /* --- 2. Full-Screen Layout --- */
-    /* This style might be in your main CSS, but is safe here */
+    /* --- 2. Full-Screen "Zenith" Layout --- */
+    
+    /* Override base.html <main> for a full-screen app */
     main.container {
         padding: 0 !important;
-        margin: 1.5rem auto !important;
-        max-width: 1400px !important; /* Allow it to be wide, but not full-bleed */
+        margin: 0 !important;
+        max-width: none !important;
     }
-    .chat-page-wrapper {
-        font-family: 'Inter', sans-serif;
-        background-color: var(--bg-soft); 
+    
+    body {
+        overflow: hidden; /* Prevent body scroll */
     }
+
     .chat-container { 
         display: grid; 
-        grid-template-columns: 350px 1fr; 
-        height: calc(100vh - 120px); /* Adjust based on navbar/footer */
-        max-height: 800px; 
-        min-height: 600px;
-        border-radius: var(--card-border-radius);
-        box-shadow: var(--card-shadow);
-        border: 1px solid var(--border-color-soft);
+        /* Professional 2-Column "Zenith" Layout */
+        grid-template-columns: 380px 1fr; 
+        /* Full-screen app, navbar is hidden */
+        height: 100vh; 
+        max-height: 100vh;
+        width: 100vw;
         overflow: hidden;
     }
 
-    /* --- 3. Sidebar --- */
+    /* --- 3. Sidebar (Column 1) --- */
     .sidebar { 
-        background-color: var(--bg-white); 
-        border-right: 1px solid var(--border-color-soft); 
+        background-color: var(--color-sidebar-bg); /* White */
+        border-right: 1px solid var(--color-border-soft); 
         display: flex; 
         flex-direction: column;
+        height: 100%; /* Fill the container */
     }
     .sidebar-header {
-        padding: 1.25rem;
-        border-bottom: 1px solid var(--border-color-soft);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--color-border-soft);
         flex-shrink: 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
     .sidebar-header h2 {
-        font-weight: 800;
+        font-family: var(--font-heading);
+        font-weight: 700;
         font-size: 1.5rem;
-        color: var(--text-dark);
+        color: var(--color-text-dark);
         margin: 0;
     }
+    .btn-icon-header {
+        font-size: 1.3rem;
+        color: var(--color-text-muted);
+        transition: color 0.2s ease;
+    }
+    .btn-icon-header:hover {
+        color: var(--color-brand-dark);
+    }
+    
+    .search-wrapper {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--color-border-soft);
+    }
+    
+    /* Upgraded to gl-form-control */
     .search-input-group {
         position: relative;
-        margin-top: 1rem;
     }
     .search-input {
-        border-radius: 50px;
-        border: 1px solid #d1d5db;
-        padding-left: 2.5rem; /* Icon space */
-        background-color: var(--bg-soft);
-        font-size: 0.9rem;
-        height: 40px;
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--color-text-dark);
+        background-color: var(--color-input-bg);
+        padding: 12px 16px 12px 44px; /* Icon space */
+        border: 2px solid transparent;
+        border-radius: 8px;
+        box-shadow: none;
+        transition: all 0.2s ease;
+        width: 100%;
     }
     .search-input:focus {
-         box-shadow: 0 0 0 3px rgba(1, 107, 97, 0.1);
-         border-color: var(--primary-color);
+        color: var(--color-text-dark);
+        background-color: var(--color-sidebar-bg);
+        border-color: var(--color-brand-dark);
+        outline: 0;
+        box-shadow: 0 0 0 4px rgba(47, 87, 85, 0.1);
     }
     .search-input-group i {
         position: absolute;
-        left: 0.9rem;
+        left: 16px;
         top: 50%;
         transform: translateY(-50%);
-        color: var(--text-muted);
+        color: var(--color-text-muted);
         z-index: 5;
+        font-size: 1rem;
     }
     
     /* List Styling */
     .sidebar-list { overflow-y: auto; flex-grow: 1; }
+    
     .sidebar-list-header {
-        padding: 1rem 1.25rem 0.5rem;
+        padding: 1rem 1.5rem 0.5rem;
         font-size: 0.75rem;
         font-weight: 700;
-        color: var(--text-muted);
+        color: var(--color-text-muted);
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        background-color: var(--bg-soft); /* Soft separator */
-        border-bottom: 1px solid var(--border-color-soft);
+        background-color: var(--color-sidebar-bg); /* White */
+        border-bottom: 1px solid var(--color-border-soft);
         position: sticky;
         top: 0;
         z-index: 10;
     }
     .list-item { 
         transition: background-color 0.2s; 
-        padding: 0.9rem 1.25rem;
-        border-bottom: 1px solid #f0f0f0 !important;
+        padding: 0.9rem 1.5rem;
+        border-bottom: 1px solid var(--color-border-soft) !important;
         position: relative; 
+        cursor: pointer;
     }
-    .list-item:hover { background-color: #f8f9fa; } /* Soft gray hover */
+    .list-item:hover { background-color: var(--color-hover-soft); } 
     
-    /* Active Chat */
+    /* "God-Level" Active Chat */
     .list-item.active {
-        background-color: var(--primary-color);
+        background-color: var(--color-brand-light); /* Muted Jade */
     }
      .list-item.active .fw-semibold,
      .list-item.active .small {
-         color: var(--text-light) !important;
+         color: var(--color-text-light) !important;
+     }
+     .list-item.active .text-muted {
+         color: var(--color-text-light) !important;
+         opacity: 0.8;
      }
 
     /* Unread Status */
     .list-item.is-unread {
-        background-color: var(--bg-cream); /* Cream for unread */
-        border-left: 4px solid var(--primary-color);
-        padding-left: calc(1.25rem - 4px);
+        background-color: var(--color-hover-soft);
+        border-left: 4px solid var(--color-brand-dark);
+        padding-left: calc(1.5rem - 4px);
     }
     .list-item.is-unread .fw-semibold {
-        font-weight: 800 !important; 
-        color: var(--text-dark) !important;
+        font-weight: 700 !important; 
+        color: var(--color-text-dark) !important;
     }
     .unread-badge { 
-        background-color: var(--primary-color) !important; 
+        background-color: var(--color-brand-dark) !important; 
+        color: var(--color-text-light) !important;
         font-size: 0.7rem; 
         min-width: 20px;
         text-align: center;
         padding: 0.3em 0.6em;
+        font-weight: 600;
+    }
+    
+    .list-item.active .unread-badge {
+        background-color: var(--color-text-light) !important;
+        color: var(--color-brand-dark) !important;
     }
     
     /* Avatar */
     .avatar-sm {
-        width: 40px; height: 40px; border-radius: 50%;
-        background-color: var(--secondary-color); color: white;
+        width: 44px; height: 44px; border-radius: 50%;
+        background-color: var(--color-brand-light); color: white;
         display: flex; align-items: center; justify-content: center;
         font-weight: 600; flex-shrink: 0;
     }
@@ -160,50 +199,37 @@
         background-color: rgba(255,255,255,0.3);
     }
     
-    /* Create Group Button */
-    .btn-create-group {
-        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-        border: none;
-        color: white;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 12px rgba(1, 107, 97, 0.2);
-    }
-    .btn-create-group:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 7px 18px rgba(1, 107, 97, 0.3);
-        color: white;
-    }
-    
-    /* --- 4. Chat Window --- */
+    /* --- 4. Chat Window (Column 2) --- */
     .chat-window { 
-        background-color: var(--bg-soft); 
+        background-color: var(--color-chat-bg); /* Light Stone */
         display: flex; 
         flex-direction: column; 
         height: 100%;
-        position: relative; /* For selection bar */
+        position: relative;
         overflow: hidden; 
     }
+    
     /* Chat Header */
     .chat-header {
-        background-color: var(--bg-white);
+        background-color: var(--color-sidebar-bg); /* White */
         padding: 1rem 1.5rem;
-        border-bottom: 1px solid var(--border-color-soft);
+        border-bottom: 1px solid var(--color-border-soft);
         flex-shrink: 0;
         box-shadow: 0 2px 5px rgba(0,0,0,0.02);
         z-index: 20;
     }
      .chat-header h5 {
+         font-family: var(--font-heading);
          font-weight: 700;
-         color: var(--primary-color);
+         color: var(--color-text-dark);
      }
      .chat-header-status {
-         font-size: 0.8rem;
-         color: var(--text-muted);
+         font-size: 0.85rem;
+         color: var(--color-text-muted);
          font-weight: 500;
      }
      .chat-header-status.typing-indicator {
-         color: var(--primary-color);
+         color: var(--color-brand-dark);
          font-weight: 600;
          font-style: italic;
      }
@@ -212,9 +238,12 @@
     .chat-messages {
         flex-grow: 1;
         overflow-y: auto;
-        padding: 1rem 1.5rem;
-        height: 100px; /* Placeholder, flex-grow handles real height */
-        background-image: radial-gradient(circle at 1px 1px, rgba(0,0,0,0.02) 1px, transparent 0);
+        padding: 1.5rem;
+        height: 100px; /* Placeholder */
+        
+        /* "GOD-LEVEL" ICONY BG */
+        background-color: var(--color-chat-bg);
+        background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='3' cy='3' r='1' fill='rgba(0,0,0,0.06)'/%3E%3C/svg%3E");
         background-size: 15px 15px;
     }
 
@@ -233,206 +262,308 @@
         from { opacity: 0; transform: translateY(5px); }
         to { opacity: 1; transform: translateY(0); }
     }
-    .message.sent { 
-        flex-direction: row-reverse; 
-    }
-    .message.received {
-        flex-direction: row; 
-    }
+    .message.sent { flex-direction: row-reverse; }
+    .message.received { flex-direction: row; }
 
     .message-bubble {
-        padding: 10px 14px;
-        border-radius: 10px;
+        padding: 12px 16px;
+        border-radius: 12px;
         font-size: 0.95rem;
-        box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
         max-width: 70%;
-        color: var(--text-dark);
-        /* Allow text selection in bubbles */
         user-select: text; 
-        -webkit-user-select: text;
-        -moz-user-select: text;
     }
+    
+    /* "GOD-LEVEL" BUBBLE STYLES */
     .message.sent .message-bubble {
-        background-color: var(--bubble-sent-bg); /* Cream */
+        background-color: var(--color-brand-dark); /* Deep Teal */
+        color: var(--color-text-light); /* White */
         border-bottom-right-radius: 0.25rem;
     }
     .message.received .message-bubble {
-        background-color: var(--bubble-received-bg); /* White */
+        background-color: var(--color-sidebar-bg); /* White */
+        color: var(--color-text-dark); /* Deep Umber */
         border-bottom-left-radius: 0.25rem;
     }
     
-    /* Make links in messages clickable */
     .message-bubble a {
-        color: var(--primary-color);
+        color: var(--color-brand-light);
         font-weight: 600;
         text-decoration: underline;
     }
-
-    /* Message Sender (Group) */
-    .message-sender {
-        font-size: 0.75rem;
-        font-weight: bold;
-        margin-bottom: 0.25rem;
-        color: var(--primary-color); /* Themed sender name */
+    .message.sent .message-bubble a {
+        color: #f0f0f0; /* Lighter link for dark bubble */
     }
 
-    /* Message Input Footer */
+    .message-sender {
+        font-size: 0.75rem;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+        color: var(--color-brand-light);
+    }
+
+    /* Chat Input Footer */
     .chat-footer {
-        background-color: var(--bg-white);
+        background-color: var(--color-sidebar-bg); /* White */
         padding: 0.75rem 1.5rem;
-        border-top: 1px solid var(--border-color-soft);
+        border-top: 1px solid var(--color-border-soft);
         flex-shrink: 0;
         box-shadow: 0 -2px 10px rgba(0,0,0,0.03);
         z-index: 20;
     }
+    
+    /* Upgraded to gl-form-control */
     #message-input {
-        border-radius: 20px;
-        padding: 0.5rem 1.25rem;
-        border: 1px solid var(--border-color-soft);
-        background-color: var(--bg-soft);
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--color-text-dark);
+        background-color: var(--color-input-bg);
+        padding: 12px 16px;
+        border: 2px solid transparent;
+        border-radius: 8px;
+        box-shadow: none;
+        transition: all 0.2s ease;
+        height: 48px; /* Match buttons */
     }
      #message-input:focus {
-         box-shadow: 0 0 0 3px rgba(1, 107, 97, 0.1);
-         border-color: var(--primary-color);
+        color: var(--color-text-dark);
+        background-color: var(--color-sidebar-bg);
+        border-color: var(--color-brand-dark);
+        outline: 0;
+        box-shadow: 0 0 0 4px rgba(47, 87, 85, 0.1);
      }
+     
     .btn-send, .btn-attach {
-        background-color: var(--primary-color);
-        border-color: var(--primary-color);
-        width: 48px; height: 48px; border-radius: 50%;
+        background-color: var(--color-brand-dark);
+        border: none;
+        color: var(--color-text-light);
+        width: 48px; height: 48px; border-radius: 8px;
         display: flex; align-items: center; justify-content: center;
         flex-shrink: 0;
         transition: all 0.2s ease;
     }
     .btn-send:hover, .btn-attach:hover {
-        background-color: #01524a; /* Darker teal */
-        border-color: #01524a;
+        background-color: var(--color-brand-light);
+        color: var(--color-text-dark);
     }
     .btn-attach {
-        background-color: var(--secondary-color);
-        border-color: var(--secondary-color);
+        background-color: var(--color-input-bg);
+        color: var(--color-brand-dark);
     }
     .btn-attach:hover {
-         background-color: #5f9999;
-         border-color: #5f9999;
+        background-color: var(--color-border-soft);
+        color: var(--color-brand-dark);
     }
 
     /* --- 5. Forward/Select UI --- */
     
     /* Selection Mode */
     .message.selected {
-        background-color: var(--bg-cream) !important; /* Cream selection tint */
+        background-color: rgba(90, 150, 144, 0.1) !important; /* Light Muted Jade */
     }
     .message.selected .message-bubble {
-        border: 1px solid var(--primary-color);
+        border: 2px solid var(--color-brand-light);
     }
     
     .chat-selection-bar {
         display: none;
-        position: absolute; /* Positions relative to .chat-window */
-        bottom: 0;
-        left: 0;
+        position: absolute; 
+        bottom: 0; left: 0;
         width: 100%;
-        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-        color: var(--text-light);
+        background-color: var(--color-brand-dark);
+        color: var(--color-text-light);
         box-shadow: 0 -4px 15px rgba(0,0,0,0.1);
-        padding: 0.5rem 1rem;
-        z-index: 100; /* Above chat-footer */
+        padding: 0.75rem 1.5rem;
+        z-index: 100;
         align-items: center;
         justify-content: space-between;
     }
-      .chat-selection-bar #selection-count {
-         font-weight: 700;
-         font-size: 1.1rem;
-     }
+     .chat-selection-bar #selection-count {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
      .btn-cancel-select {
-         background-color: transparent;
-         border: 1px solid rgba(255,255,255,0.5);
-         color: white;
-     }
+        background-color: transparent;
+        border: 2px solid rgba(255,255,255,0.5);
+        color: white;
+        font-weight: 600;
+    }
      .btn-forward-select {
-         background-color: var(--bg-white);
-         color: var(--primary-color);
-         font-weight: 600;
-     }
-     .btn-forward-select:disabled {
-         background-color: var(--text-muted);
-         opacity: 0.7;
-     }
+        background-color: var(--color-sidebar-bg);
+        color: var(--color-brand-dark);
+        font-weight: 700;
+    }
 
-    /* State changes when in selection mode */
-    .chat-window.in-selection-mode .chat-footer {
-        display: none; /* Hide the normal message input */
-    }
-    .chat-window.in-selection-mode .chat-selection-bar {
-        display: flex; /* Show the new action bar */
-    }
+    .chat-window.in-selection-mode .chat-footer { display: none; }
+    .chat-window.in-selection-mode .chat-selection-bar { display: flex; }
 
     /* --- 6. Modal Styling --- */
     .modal-content {
-        border-radius: var(--card-border-radius);
+        border-radius: 12px;
         border: none;
     }
     .modal-header {
-        background-color: var(--bg-cream);
-        border-bottom: 1px solid var(--border-color-soft);
+        background-color: var(--color-input-bg);
+        border-bottom: 1px solid var(--color-border-soft);
     }
      .modal-header .modal-title {
-         font-weight: 700;
-         color: var(--primary-color);
+        font-family: var(--font-heading);
+        font-weight: 700;
+        color: var(--color-brand-dark);
      }
      .modal-body { padding: 0; }
      .forward-target:hover {
-         background-color: var(--bg-cream);
+         background-color: var(--color-hover-soft);
      }
      
      /* JS Filtering */
-    .list-item.hidden-by-filter { display: none !important; }
-    #noResultsMessage {
-        display: none; /* Hidden by default */
-        text-align: center;
-        padding: 2rem;
-        color: var(--text-muted);
-    }
+     .list-item.hidden-by-filter { display: none !important; }
+     #noResultsMessage {
+         display: none; 
+         text-align: center;
+         padding: 2rem;
+         color: var(--color-text-muted);
+     }
 
     /* --- 7. Responsive --- */
+    @media (max-width: 992px) {
+         .chat-container { 
+             grid-template-columns: 320px 1fr; /* Slimmer sidebar */
+         }
+    }
+
+    /* --- ★★★ CONSOLIDATED 768px QUERIES ★★★ --- */
     @media (max-width: 768px) {
-         .chat-page-wrapper { margin: 0; padding: 0; }
+         body { overflow: auto; }
          .chat-container { 
              grid-template-columns: 1fr; /* Single column */
              height: 100vh; /* Full screen */
              max-height: none;
              min-height: none;
-             border-radius: 0;
          }
          .sidebar {
-             display: none; /* Hide sidebar */
+             /* This JS will hide/show the sidebar */
+             display: none; 
+             position: absolute;
+             top: 0;
+             left: 0;
+             width: 100%;
+             height: 100%;
+             z-index: 1000;
          }
          .chat-window {
-             border-radius: 0;
+             display: flex; /* Always show chat window */
+             width: 100%;
+             height: 100%;
+         }
+
+         /* This class will be toggled by JS */
+         .mobile-sidebar-visible .sidebar {
+             display: flex;
+         }
+         .mobile-sidebar-visible .chat-window {
+             display: none;
+         }
+
+         /* Added refinements for 768px */
+         .chat-header {
+             padding: 0.75rem 1rem;
+         }
+         .chat-header #show-sidebar-btn {
+            font-size: 1.25rem;
+         }
+         .chat-footer {
+             padding: 0.75rem 1rem;
          }
          .chat-messages {
-             padding: 1rem 3%;
+             padding: 1rem;
          }
-         /* Make the back-button/header obvious */
-         .sidebar-header {
-             padding-left: 10px !important;
+    }
+
+    /* --- ★★★ NEW: Smaller Mobile Phones (e.g., iPhone SE) ★★★ --- */
+    @media (max-width: 576px) {
+        .chat-header, .chat-footer {
+             padding: 0.75rem 1rem;
+        }
+        .chat-messages {
+             padding: 1rem;
+        }
+        .message-bubble {
+             max-width: 80%;
+             font-size: 0.9rem;
+             padding: 10px 14px;
+        }
+        .btn-send, .btn-attach {
+             width: 42px; 
+             height: 42px;
+        }
+        #message-input {
+             height: 42px;
+             font-size: 0.95rem;
+        }
+        .chat-footer form {
+             gap: 8px !important;
+        }
+        .chat-header h5 {
+             font-size: 1.1rem;
+        }
+        .chat-header-status {
+             font-size: 0.8rem;
+        }
+        .chat-selection-bar {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+        .chat-selection-bar .btn {
+            font-size: 0.9rem;
+        }
+    }
+
+    /* --- ★★★ NEW: Landscape Mode on Phones (short height) ★★★ --- */
+    @media (max-height: 500px) and (orientation: landscape) {
+         .chat-header {
+             padding: 0.5rem 1rem;
+         }
+         .chat-header h5 {
+             font-size: 1.1rem;
+         }
+         .chat-header-status {
+             font-size: 0.75rem;
+         }
+         .chat-footer {
+             padding: 0.5rem 1rem;
+         }
+         #message-input, .btn-send, .btn-attach {
+             height: 40px; /* Shorter input */
          }
     }
 </style>
 
-<div class="card shadow-lg border-0 rounded-4 overflow-hidden chat-page-wrapper">
+<!-- 
+  This outer wrapper is for the mobile view toggle.
+  All HTML, IDs, and Jinja logic are preserved.
+-->
+<div id="chat-page-wrapper">
     <div class="chat-container">
         <aside class="sidebar">
-            <div class="sidebar-header border-b d-flex justify-content-between align-items-center p-3">
-                <h2 class="fw-bold fs-5 mb-0 text-dark">Messenger</h2>
-                <a href="{{ url_for('chat.index') }}" class="btn btn-sm btn-outline-dark border-0 text-dark" title="Back to Directory">
+            <div class="sidebar-header">
+                <h2>Messenger</h2>
+                <!-- Mobile: This button now shows the chat window -->
+                <a href="#" class="btn-icon-header d-md-none" id="show-chat-btn" title="Show Chat">
+                    <i class="bi bi-chat-dots-fill"></i>
+                </a>
+                <!-- Desktop: Back to directory -->
+                <a href="{{ url_for('chat.index') }}" class="btn-icon-header d-none d-md-block" title="Back to Directory">
                     <i class="bi bi-person-lines-fill fs-5"></i>
                 </a>
             </div>
             
-            <div class="search-input-group p-3">
-                <i class="bi bi-search"></i>
-            <input type="search" id="chatSearchInput" class="form-control search-input" placeholder="Search chats...">
+            <div class="search-wrapper">
+                <div class="search-input-group">
+                    <i class="bi bi-search"></i>
+                    <input type="search" id="chatSearchInput" class="form-control search-input" placeholder="Search chats...">
+                </div>
             </div>
             
             <div class="sidebar-list">
@@ -448,12 +579,12 @@
                     
                     <li class="list-group-item list-item border-0 
                     {% if room.id == active_room.id %}active{% endif %} 
-                        {% if p.unread_count > 0 %}is-unread{% endif %}"
+                    {% if p.unread_count > 0 %}is-unread{% endif %}"
                         id="sidebar-room-{{ room.id }}"
                         
                         data-searchable="{{ chat_name | lower }} {{ other_user.username | lower if other_user else '' }} {{ other_user.email | lower if other_user else '' }} {{ search_id | string }}">
                         
-                        <a href="{{ url_for('chat.view_room', room_id=room.id) }}" class="d-flex align-items-center text-decoration-none text-dark">
+                        <a href="{{ url_for('chat.view_room', room_id=room.id) }}" class="d-flex align-items-center text-decoration-none text-dark stretched-link">
                             <div class="avatar-sm me-3">{{ chat_name[0]|upper }}</div>
                             <div class="flex-grow-1 overflow-hidden">
                                 <div class="fw-semibold text-truncate">{{ chat_name }}</div>
@@ -476,30 +607,33 @@
 
         <main class="chat-window" id="chat-window">
             <div class="chat-header d-flex justify-content-between align-items-center">
-                <div>
-                    <a href="{{ url_for('chat.index') }}" class="btn btn-sm btn-outline-dark border-0 text-dark d-md-none me-2" title="Back to Chats">
-                        <i class="bi bi-arrow-left"></i>
+                <div class="d-flex align-items-center">
+                    <!-- Mobile: This button now shows the sidebar -->
+                    <a href="#" class="btn btn-sm border-0 text-dark d-md-none me-2" id="show-sidebar-btn" title="Back to Chats">
+                        <i class="bi bi-arrow-left fs-5"></i>
                     </a>
                     
-                    <h5 class="fw-bold mb-0 d-inline">
-                        {%- if active_room.room_type == 'group' %}{{ active_room.name }}
-                        {%- elif chat_partner %}{{ chat_partner.name }}
-                        {%- else %}Chat
-                        {%- endif -%}
-                    </h5>
-                    
-                    <div class="chat-header-status" id="chat-partner-status">
-                        {% if chat_partner %}
-                            {% if is_online %}
-                                Online
-                            {% elif last_seen_ist %}
-                                Last seen at {{ last_seen_ist }}
+                    <div>
+                        <h5 class="fw-bold mb-0 d-inline">
+                            {%- if active_room.room_type == 'group' %}{{ active_room.name }}
+                            {%- elif chat_partner %}{{ chat_partner.name }}
+                            {%- else %}Chat
+                            {%- endif -%}
+                        </h5>
+                        
+                        <div class="chat-header-status" id="chat-partner-status">
+                            {% if chat_partner %}
+                                {% if is_online %}
+                                    Online
+                                {% elif last_seen_ist %}
+                                    Last seen at {{ last_seen_ist }}
+                                {% else %}
+                                    Offline
+                                {% endif %}
                             {% else %}
-                                Offline
+                                {{ active_room.participants.count() }} Members
                             {% endif %}
-                        {% else %}
-                            {{ active_room.participants.count() }} Members
-                        {% endif %}
+                        </div>
                     </div>
                 </div>
                 
@@ -507,6 +641,7 @@
                     <button class="btn btn-sm btn-outline-secondary" id="start-selection-btn" title="Select Messages">
                         <i class="bi bi-check-square"></i>
                     </button>
+                    <!-- More options (e.g., group info) could go here -->
                 </div>
             </div>
 
@@ -529,7 +664,7 @@
                                 <i class="bi bi-file-earmark-arrow-down me-2"></i> {{ msg.attachment.filename }}
                             </a>
                             {% else %}
-                            {{ msg.content }}
+                            {{ msg.content | safe }}
                             {% endif %}
                         </div>
                     </div>
@@ -538,16 +673,17 @@
             </div>
 
             <div class="chat-footer">
-            <form style="gap: 5px;" id="message-form" class="chat-input-form d-flex">
+            <form style="gap: 10px;" id="message-form" class="chat-input-form d-flex align-items-center">
                 {{ form.csrf_token }}
                 <input type="file" id="file-input" class="d-none">
                 
-                <!-- This is the correct HTML. The <label> now controls the file input. -->
-                <label for="file-input" id="attach-button" class="btn btn-attach" title="Attach File"><i
-    class="bi bi-paperclip fs-5"></i></label>
+                <label for="file-input" id="attach-button" class="btn btn-attach" title="Attach File">
+                    <i class="bi bi-paperclip fs-5"></i>
+                </label>
                 
                 <input type="text" id="message-input" class="form-control" placeholder="Type a message..."
                        autocomplete="off">
+                       
                 <button type="submit" class="btn btn-send"><i class="bi bi-send-fill fs-5"></i></button>
                 </form>
             </div>
@@ -564,6 +700,7 @@
     </div>
 </div>
 
+<!-- Forward Modal (Unchanged) -->
 <div class="modal fade" id="forward-modal" tabindex="-1" aria-labelledby="forwardModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
@@ -600,7 +737,10 @@
     </div>
 </div>
 
+{% endblock %}
+
 {% block scripts %}
+{{ super() }}
 <script>
     // --- ★★★ THIS IS THE FINAL FIX FOR MULTIPLE MESSAGES/UPLOADS ★★★ ---
     // This `if` check prevents the entire script from running more than ONCE,
@@ -608,399 +748,440 @@
     if (!window.chatScriptLoaded) {
         window.chatScriptLoaded = true; // Set the flag
 
-        document.addEventListener('DOMContentLoaded', function () {
+        // ★★★ BUG FIX: REMOVED DOMContentLoaded WRAPPER ★★★
+        // The script is at the end of the <body>, so the DOM is already loaded.
+        // document.addEventListener('DOMContentLoaded', function () { // <-- DELETED
+
             // Ensure socket.io is loaded from base.html
             if (typeof io === 'undefined') {
                 console.error('Socket.IO client library not loaded. Make sure base.html includes it.');
-                return;
-            }
+            } else {
+                const socket = io();
+                const room_id = "{{ active_room.id }}";
+                const current_user_id = {{current_user.id}};
+                const chat_partner_id = {{chat_partner.id if chat_partner else 'null' }};
+                const room_type = "{{ active_room.room_type }}";
+                const current_user_name = "{{ current_user.name }}";
 
-            const socket = io();
-            const room_id = "{{ active_room.id }}";
-            const current_user_id = {{current_user.id}};
-            const chat_partner_id = {{chat_partner.id if chat_partner else 'null' }};
-            const room_type = "{{ active_room.room_type }}";
-            const current_user_name = "{{ current_user.name }}";
+                const messagesContainer = document.getElementById('chat-messages');
+                const statusElement = document.getElementById('chat-partner-status');
+                const originalStatus = statusElement ? statusElement.textContent.trim() : 'Offline';
+                const input = document.getElementById('message-input');
+                const attachButton = document.getElementById('attach-button');
+                const fileInput = document.getElementById('file-input');
+                const form = document.getElementById('message-form');
 
-            const messagesContainer = document.getElementById('chat-messages');
-            const statusElement = document.getElementById('chat-partner-status');
-            const originalStatus = statusElement ? statusElement.textContent.trim() : 'Offline';
-            const input = document.getElementById('message-input');
-            const attachButton = document.getElementById('attach-button');
-            const fileInput = document.getElementById('file-input');
-            const form = document.getElementById('message-form');
+                // --- START: MODIFIED FOR MULTI-FORWARD ---
 
-            // --- START: MODIFIED FOR MULTI-FORWARD ---
+                // --- State Management Variables ---
+                let isInSelectionMode = false;
+                let selectedMessageIds = [];
 
-            // --- State Management Variables ---
-            let isInSelectionMode = false;
-            let selectedMessageIds = [];
+                // --- DOM Elements for Selection ---
+                const chatWindow = document.getElementById('chat-window');
+                const selectionBar = document.getElementById('selection-bar');
+                const startSelectionBtn = document.getElementById('start-selection-btn');
+                const cancelSelectionBtn = document.getElementById('cancel-selection-btn');
+                const forwardSelectionBtn = document.getElementById('forward-selection-btn');
+                const selectionCount = document.getElementById('selection-count');
+                const forwardListContainer = document.getElementById('forward-list-container');
 
-            // --- DOM Elements for Selection ---
-            const chatWindow = document.getElementById('chat-window');
-            const selectionBar = document.getElementById('selection-bar');
-            const startSelectionBtn = document.getElementById('start-selection-btn');
-            const cancelSelectionBtn = document.getElementById('cancel-selection-btn');
-            const forwardSelectionBtn = document.getElementById('forward-selection-btn');
-            const selectionCount = document.getElementById('selection-count');
-            const forwardListContainer = document.getElementById('forward-list-container');
-
-            // --- State Helper Functions ---
-            function updateSelectionCount() {
-                if (selectionCount) {
-                    selectionCount.textContent = `${selectedMessageIds.length} Selected`;
+                // --- State Helper Functions ---
+                function updateSelectionCount() {
+                    if (selectionCount) {
+                        selectionCount.textContent = `${selectedMessageIds.length} Selected`;
+                    }
+                    if (forwardSelectionBtn) {
+                        forwardSelectionBtn.disabled = selectedMessageIds.length === 0;
+                    }
                 }
-                if (forwardSelectionBtn) {
-                    forwardSelectionBtn.disabled = selectedMessageIds.length === 0;
-                }
-            }
 
-            function enterSelectionMode() {
-                isInSelectionMode = true;
-                if (chatWindow) {
-                    chatWindow.classList.add('in-selection-mode');
+                function enterSelectionMode() {
+                    isInSelectionMode = true;
+                    if (chatWindow) {
+                        chatWindow.classList.add('in-selection-mode');
+                    }
+                    updateSelectionCount();
                 }
-                updateSelectionCount();
-            }
 
-            function exitSelectionMode() {
-                isInSelectionMode = false;
-                if (chatWindow) {
-                    chatWindow.classList.remove('in-selection-mode');
+                function exitSelectionMode() {
+                    isInSelectionMode = false;
+                    if (chatWindow) {
+                        chatWindow.classList.remove('in-selection-mode');
+                    }
+                    selectedMessageIds = [];
+                    // Remove all .selected classes from messages
+                    if (messagesContainer) {
+                        messagesContainer.querySelectorAll('.message.selected').forEach(el => {
+                            el.classList.remove('selected');
+                        });
+                    }
                 }
-                selectedMessageIds = [];
-                // Remove all .selected classes from messages
+
+                function toggleMessageSelection(messageElement) {
+                    const msgId = messageElement.dataset.messageId;
+                    if (!msgId) return; // Not a selectable message
+
+                    const index = selectedMessageIds.indexOf(msgId);
+                    if (index > -1) {
+                        // Already selected, de-select it
+                        selectedMessageIds.splice(index, 1);
+                        messageElement.classList.remove('selected');
+                    } else {
+                        // Not selected, select it
+                        selectedMessageIds.push(msgId);
+                        messageElement.classList.add('selected');
+                    }
+                    updateSelectionCount();
+                }
+
+                // --- Event Listeners for Selection ---
+                if (startSelectionBtn) {
+                    startSelectionBtn.addEventListener('click', enterSelectionMode);
+                }
+                if (cancelSelectionBtn) {
+                    cancelSelectionBtn.addEventListener('click', exitSelectionMode);
+                }
+
+                // --- Combined Click Handler for Message Area ---
                 if (messagesContainer) {
-                    messagesContainer.querySelectorAll('.message.selected').forEach(el => {
-                        el.classList.remove('selected');
+                    messagesContainer.addEventListener('click', function(e) {
+                        if (isInSelectionMode) {
+                            // --- SELECTION MODE ---
+                            e.preventDefault();
+                            e.stopPropagation(); // Stop other listeners
+                            
+                            const messageElement = e.target.closest('.message');
+                            if (messageElement) {
+                                toggleMessageSelection(messageElement);
+                            }
+                        } 
+                        // --- ATTACHMENT VIEW TRACKING ---
+                        else {
+                            const link = e.target.closest('.message-attachment-link');
+                            if (link && !link.classList.contains('attachment-viewed')) {
+                                const attachmentId = link.id.split('-')[1];
+                                const message = link.closest('.message');
+                                // Only track for *received* messages
+                                if (message && message.classList.contains('received')) {
+                                    socket.emit('viewed_attachment', { 
+                                        attachment_id: attachmentId, 
+                                        room_id: room_id 
+                                    });
+                                    link.classList.add('attachment-viewed'); // Optimistic update
+                                }
+                            }
+                        }
                     });
                 }
-            }
 
-            function toggleMessageSelection(messageElement) {
-                const msgId = messageElement.dataset.messageId;
-                if (!msgId) return; // Not a selectable message
-
-                const index = selectedMessageIds.indexOf(msgId);
-                if (index > -1) {
-                    // Already selected, de-select it
-                    selectedMessageIds.splice(index, 1);
-                    messageElement.classList.remove('selected');
-                } else {
-                    // Not selected, select it
-                    selectedMessageIds.push(msgId);
-                    messageElement.classList.add('selected');
-                }
-                updateSelectionCount();
-            }
-
-            // --- Event Listeners for Selection ---
-            if (startSelectionBtn) {
-                startSelectionBtn.addEventListener('click', enterSelectionMode);
-            }
-            if (cancelSelectionBtn) {
-                cancelSelectionBtn.addEventListener('click', exitSelectionMode);
-            }
-
-            // --- Combined Click Handler for Message Area ---
-            if (messagesContainer) {
-                messagesContainer.addEventListener('click', function(e) {
-                    if (isInSelectionMode) {
-                        // --- SELECTION MODE ---
-                        e.preventDefault();
-                        e.stopPropagation(); // Stop other listeners
+                // --- Combined Click Handler for Forward Modal ---
+                if (forwardListContainer) {
+                    forwardListContainer.addEventListener('click', function (e) {
+                        const target = e.target.closest('.forward-target');
+                        if (!target) return;
                         
-                        const messageElement = e.target.closest('.message');
-                        if (messageElement) {
-                            toggleMessageSelection(messageElement);
-                        }
-                    } 
-                    // No 'else' block needed, just let default link behavior happen
-                });
-            }
+                        const destinationRoomId = target.dataset.roomId;
 
-            // --- Combined Click Handler for Forward Modal ---
-            if (forwardListContainer) {
-                forwardListContainer.addEventListener('click', function (e) {
-                    const target = e.target.closest('.forward-target');
-                    if (!target) return;
-                    
-                    const destinationRoomId = target.dataset.roomId;
-
-                    if (isInSelectionMode) {
-                        // --- MULTI-FORWARD ---
-                        if (selectedMessageIds.length > 0) {
-                            socket.emit('forward_multiple_messages', {
-                                original_message_ids: selectedMessageIds,
-                                destination_room_id: destinationRoomId
-                            });
-                        }
-                        exitSelectionMode(); // Exit mode after forwarding
-                    }
-                });
-            }
-            // --- END: ADDED FOR MULTI-FORWARD ---
-
-
-            // --- Scroll to bottom
-            function scrollToBottom() {
-                if (messagesContainer) {
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                }
-            }
-            scrollToBottom();
-
-            // --- Add message to UI
-            function addMessageToUI(msg, isSent) {
-                if (!messagesContainer) return;
-
-                const item = document.createElement('div');
-                item.className = 'message ' + (isSent ? 'sent' : 'received');
-                
-                if (msg.id) {
-                    item.dataset.messageId = msg.id;
-                }
-
-                const bubble = document.createElement('div');
-                bubble.className = 'message-bubble';
-                if (msg.id) {
-                    bubble.id = 'message-' + msg.id;
-                }
-
-                // --- Sender (for group only) ---
-                if (!isSent && msg.room_type === 'group' && msg.sender_name) {
-                    const senderNameDiv = document.createElement('div');
-                    senderNameDiv.className = 'message-sender';
-                    senderNameDiv.textContent = msg.sender_name;
-                    // Simple color logic
-                    const colors = ['#016B61', '#3B82F6', '#92400E', '#7C3AED'];
-                    senderNameDiv.style.color = colors[msg.sender_id % colors.length];
-                    bubble.appendChild(senderNameDiv);
-                }
-
-                const content = document.createElement('div');
-                if (msg.attachment) {
-                    const link = document.createElement('a');
-                    link.href = `/chat/attachment/${msg.attachment.id}`;
-                    link.id = 'attachment-' + msg.attachment.id;
-                    link.className = 'message-attachment-link';
-                    if (msg.attachment.viewed && msg.sender_id !== current_user_id) {
-                        link.classList.add('attachment-viewed');
-                    }
-                    link.innerHTML = `<i class="bi bi-file-earmark-arrow-down me-2"></i> ${msg.attachment.filename}`;
-                    content.appendChild(link);
-                } else {
-                    // Auto-link URLs in messages
-                    const urlRegex = /(https?:\/\/[^\s]+)/g;
-                    const linkedText = msg.content.replace(urlRegex, '<a href="$1" target="_blank">$1</a>');
-                    content.innerHTML = linkedText;
-                }
-
-                bubble.appendChild(content);
-                item.appendChild(bubble);
-                messagesContainer.appendChild(item);
-
-                setTimeout(scrollToBottom, 0);
-            }
-
-            // --- Socket.IO Connection ---
-            socket.on('connect', () => {
-                socket.emit('join', {room: room_id});
-                socket.emit('join', {room: `user_${current_user_id}`});
-            });
-
-            // --- Presence ---
-            socket.on('user_status_update', (data) => {
-                if (data.user_id == chat_partner_id && statusElement) {
-                    statusElement.textContent = data.status;
-                    statusElement.classList.remove('typing-indicator');
-                }
-            });
-
-            // --- Typing ---
-            socket.on('typing_started', (data) => {
-                if (data.user_id == chat_partner_id && statusElement) {
-                    statusElement.textContent = `${data.user_name} is typing...`;
-                    statusElement.classList.add('typing-indicator');
-                }
-            });
-
-            socket.on('typing_stopped', (data) => {
-                if (data.user_id == chat_partner_id && statusElement) {
-                    statusElement.textContent = originalStatus;
-                    statusElement.classList.remove('typing-indicator');
-                }
-            });
-
-            if (input) {
-                let typingTimeout;
-                input.addEventListener('input', () => {
-                    clearTimeout(typingTimeout);
-                    socket.emit('start_typing', {room: room_id, user_name: current_user_name});
-                    typingTimeout = setTimeout(() => {
-                        socket.emit('stop_typing', {room: room_id});
-                    }, 2000);
-                });
-            }
-
-            // --- Message listener ---
-            socket.on('message', (msg) => {
-                msg.room_type = room_type;  // Inject manually if not sent
-
-                // We check if it's a forward. If it is, we ALWAYS show it.
-                // Otherwise, we use the old logic to prevent echo.
-                if (msg.is_forward) {
-                    addMessageToUI(msg, msg.sender_id === current_user_id);
-                } else if (msg.sender_id !== current_user_id || msg.attachment) {
-                    addMessageToUI(msg, msg.sender_id === current_user_id);
-                }
-            });
-
-            // --- Attachment viewed ---
-            socket.on('attachment_viewed', (data) => {
-                const link = document.getElementById(`attachment-${data.attachment_id}`);
-                if (link) {
-                    link.classList.add('attachment-viewed');
-                }
-            });
-
-            // --- Attachment deleted (after recipient download) ---
-            socket.on('attachment_deleted', function(data) {
-                let attachmentLink = document.getElementById(`attachment-${data.attachment_id}`);
-                if (attachmentLink) {
-                    let contentDiv = attachmentLink.parentElement;
-                    if (contentDiv) {
-                        contentDiv.textContent = '[Attachment deleted]';
-                    }
-                }
-            });
-
-            // --- Send message ---
-            if (form) {
-                form.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    const text = input.value.trim();
-                    if (text) {
-                        const optimisticMsg = {
-                            content: text,
-                            sender_name: current_user_name,
-                            sender_id: current_user_id,
-                            attachment: null,
-                            room_type: room_type,
-                        };
-                        addMessageToUI(optimisticMsg, true);
-                        socket.emit('send_message', {message: text, room: room_id});
-                        input.value = '';
-                    }
-                });
-            }
-
-            // --- File upload ---
-            
-            // --- ★★★ FIX #2: THE BUGGY JAVASCRIPT BLOCK IS GONE ★★★ ---
-            // The `if (attachButton)` block has been DELETED.
-            // The <label> in the HTML now handles the click.
-            // --- ★★★ END OF FIX ★AN ★★★ ---
-
-            if (fileInput) {
-                fileInput.addEventListener('change', () => {
-                    const file = fileInput.files[0];
-                    if (!file) return;
-                    if (file.size > 100 * 1024 * 1024) { // 100MB limit
-                        alert('File is too large! Max 100MB.');
-                        return;
-                    }
-
-                    const formData = new FormData();
-                    formData.append('file', file);
-                    
-                    // Also disable the label, which has the ID 'attach-button'
-                    if (attachButton) {
-                        attachButton.style.pointerEvents = 'none'; // Disable label clicks
-                        attachButton.style.opacity = '0.5';
-                    }
-                    if(form) {
-                        form.querySelector('button[type="submit"]').disabled = true;
-                    }
-                    if(input) {
-                        input.placeholder = 'Uploading...';
-                    }
-
-                    const csrf_token = document.querySelector("input[name='csrf_token']").value;
-                    fetch(`/chat/upload-attachment/${room_id}`, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRFToken': csrf_token
-                        },
-                        body: formData
-                    })
-                        .then(res => {
-                            if (!res.ok) {
-                                return res.text().then(text => { 
-                                    throw new Error('Server responded with ' + res.status + ': ' + text) 
+                        if (isInSelectionMode) {
+                            // --- MULTI-FORWARD ---
+                            if (selectedMessageIds.length > 0) {
+                                socket.emit('forward_multiple_messages', {
+                                    original_message_ids: selectedMessageIds,
+                                    destination_room_id: destinationRoomId
                                 });
                             }
-                            return res.json();
-                        })
-                        .then(data => {
-                            if (data.error) {
-                                alert('Upload failed: ' + data.error);
-                            }
-                            // Otherwise, message with attachment will be broadcast from server
-                        })
-                        .catch(err => {
-                            console.error('Upload failed:', err);
-                            alert('Error uploading file. Check the console for details.');
-                        })
-                        .finally(() => {
-                            if (attachButton) {
-                                attachButton.style.pointerEvents = 'auto'; // Re-enable label
-                                attachButton.style.opacity = '1';
-                            }
-                            if(form) {
-                                form.querySelector('button[type="submit"]').disabled = false;
-                            }
-                            if(input) {
-                                input.placeholder = 'Type a message...';
-                            }
-                            fileInput.value = '';
-                        });
+                            exitSelectionMode(); // Exit mode after forwarding
+                        }
+                    });
+                }
+                // --- END: ADDED FOR MULTI-FORWARD ---
+
+
+                // --- Scroll to bottom
+                function scrollToBottom() {
+                    if (messagesContainer) {
+                        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    }
+                }
+                scrollToBottom();
+
+                // --- Add message to UI
+                function addMessageToUI(msg, isSent) {
+                    if (!messagesContainer) return;
+
+                    const item = document.createElement('div');
+                    item.className = 'message ' + (isSent ? 'sent' : 'received');
+                    
+                    if (msg.id) {
+                        item.dataset.messageId = msg.id;
+                    }
+
+                    const bubble = document.createElement('div');
+                    bubble.className = 'message-bubble';
+                    if (msg.id) {
+                        bubble.id = 'message-' + msg.id;
+                    }
+
+                    // --- Sender (for group only) ---
+                    if (!isSent && msg.room_type === 'group' && msg.sender_name) {
+                        const senderNameDiv = document.createElement('div');
+                        senderNameDiv.className = 'message-sender';
+                        senderNameDiv.textContent = msg.sender_name;
+                        // Simple color logic
+                        const colors = ['#016B61', '#3B82F6', '#92400E', '#7C3AED'];
+                        senderNameDiv.style.color = colors[msg.sender_id % colors.length];
+                        bubble.appendChild(senderNameDiv);
+                    }
+
+                    const content = document.createElement('div');
+                    if (msg.attachment) {
+                        const link = document.createElement('a');
+                        link.href = `/chat/attachment/${msg.attachment.id}`;
+                        link.id = 'attachment-' + msg.attachment.id;
+                        link.className = 'message-attachment-link';
+                        if (msg.attachment.viewed && msg.sender_id !== current_user_id) {
+                            link.classList.add('attachment-viewed');
+                        }
+                        link.innerHTML = `<i class="bi bi-file-earmark-arrow-down me-2"></i> ${msg.attachment.filename}`;
+                        content.appendChild(link);
+                    } else {
+                        // Auto-link URLs in messages
+                        const urlRegex = /(https?:\/\/[^\s]+)/g;
+                        // Use .textContent to prevent XSS, then replace
+                        const tempDiv = document.createElement('div');
+                        tempDiv.textContent = msg.content;
+                        const linkedText = tempDiv.innerHTML.replace(urlRegex, '<a href="$1" target="_blank">$1</a>');
+                        content.innerHTML = linkedText;
+                    }
+
+                    bubble.appendChild(content);
+                    item.appendChild(bubble);
+                    messagesContainer.appendChild(item);
+
+                    setTimeout(scrollToBottom, 0);
+                }
+
+                // --- Socket.IO Connection ---
+                socket.on('connect', () => {
+                    socket.emit('join', {room: room_id});
+                    socket.emit('join', {room: `user_${current_user_id}`});
                 });
-            }
+
+                // --- Presence ---
+                socket.on('user_status_update', (data) => {
+                    if (data.user_id == chat_partner_id && statusElement) {
+                        statusElement.textContent = data.status;
+                        statusElement.classList.remove('typing-indicator');
+                    }
+                });
+
+                // --- Typing ---
+                socket.on('typing_started', (data) => {
+                    if (data.user_id == chat_partner_id && statusElement) {
+                        statusElement.textContent = `${data.user_name} is typing...`;
+                        statusElement.classList.add('typing-indicator');
+                    }
+                });
+
+                socket.on('typing_stopped', (data) => {
+                    if (data.user_id == chat_partner_id && statusElement) {
+                        statusElement.textContent = originalStatus;
+                        statusElement.classList.remove('typing-indicator');
+                    }
+                });
+
+                if (input) {
+                    let typingTimeout;
+                    input.addEventListener('input', () => {
+                        clearTimeout(typingTimeout);
+                        socket.emit('start_typing', {room: room_id, user_name: current_user_name});
+                        typingTimeout = setTimeout(() => {
+                            socket.emit('stop_typing', {room: room_id});
+                        }, 2000);
+                    });
+                }
+
+                // --- Message listener ---
+                socket.on('message', (msg) => {
+                    msg.room_type = room_type; // Inject manually if not sent
+
+                    // We check if it's a forward. If it is, we ALWAYS show it.
+                    // Otherwise, we use the old logic to prevent echo.
+                    if (msg.is_forward) {
+                        addMessageToUI(msg, msg.sender_id === current_user_id);
+                    } else if (msg.sender_id !== current_user_id || msg.attachment) {
+                        addMessageToUI(msg, msg.sender_id === current_user_id);
+                    }
+                });
+
+                // --- Attachment viewed ---
+                socket.on('attachment_viewed', (data) => {
+                    const link = document.getElementById(`attachment-${data.attachment_id}`);
+                    if (link) {
+                        link.classList.add('attachment-viewed');
+                    }
+                });
+
+                // --- Attachment deleted (after recipient download) ---
+                socket.on('attachment_deleted', function(data) {
+                    let attachmentLink = document.getElementById(`attachment-${data.attachment_id}`);
+                    if (attachmentLink) {
+                        let contentDiv = attachmentLink.parentElement;
+                        if (contentDiv) {
+                            contentDiv.textContent = '[Attachment deleted]';
+                        }
+                    }
+                });
+
+                // --- Send message ---
+                if (form) {
+                    form.addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        const text = input.value.trim();
+                        if (text) {
+                            const optimisticMsg = {
+                                content: text,
+                                sender_name: current_user_name,
+                                sender_id: current_user_id,
+                                attachment: null,
+                                room_type: room_type,
+                            };
+                            addMessageToUI(optimisticMsg, true);
+                            socket.emit('send_message', {message: text, room: room_id});
+                            input.value = '';
+                        }
+                    });
+                }
+
+                // --- File upload ---
+                if (fileInput) {
+                    fileInput.addEventListener('change', () => {
+                        const file = fileInput.files[0];
+                        if (!file) return;
+                        if (file.size > 100 * 1024 * 1024) { // 100MB limit
+                            alert('File is too large! Max 100MB.');
+                            return;
+                        }
+
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        
+                        if (attachButton) {
+                            attachButton.style.pointerEvents = 'none'; // Disable label clicks
+                            attachButton.style.opacity = '0.5';
+                        }
+                        if(form) {
+                            form.querySelector('button[type="submit"]').disabled = true;
+                        }
+                        if(input) {
+                            input.placeholder = 'Uploading...';
+                        }
+
+                        const csrf_token = document.querySelector("input[name='csrf_token']").value;
+                        fetch(`/chat/upload-attachment/${room_id}`, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': csrf_token
+                            },
+                            body: formData
+                        })
+                            .then(res => {
+                                if (!res.ok) {
+                                    return res.text().then(text => { 
+                                        throw new Error('Server responded with ' + res.status + ': ' + text) 
+                                    });
+                                }
+                                return res.json();
+                            })
+                            .then(data => {
+                                if (data.error) {
+                                    alert('Upload failed: ' + data.error);
+                                }
+                                // Otherwise, message with attachment will be broadcast from server
+                            })
+                            .catch(err => {
+                                console.error('Upload failed:', err);
+                                alert('Error uploading file. Check the console for details.');
+                            })
+                            .finally(() => {
+                                if (attachButton) {
+                                    attachButton.style.pointerEvents = 'auto'; // Re-enable label
+                                    attachButton.style.opacity = '1';
+                                }
+                                if(form) {
+                                    form.querySelector('button[type="submit"]').disabled = false;
+                                }
+                                if(input) {
+                                    input.placeholder = 'Type a message...';
+                                }
+                                fileInput.value = '';
+                            });
+                    });
+                }
+                
+                // --- START: ADDED FOR SIDEBAR SEARCH ---
+                const chatSearchInput = document.getElementById('chatSearchInput');
+                const chatList = document.getElementById('chatList');
+                const chatListItems = chatList ? chatList.querySelectorAll('li.list-item') : [];
+                const noResultsMessage = document.getElementById('noResultsMessage');
+
+                if (chatSearchInput) {
+                    chatSearchInput.addEventListener('input', function(e) {
+                        const searchTerm = e.target.value.toLowerCase();
+                        let visibleCount = 0;
+
+                        if (chatListItems.length > 0) {
+                            chatListItems.forEach(item => {
+                                const searchableText = item.dataset.searchable || '';
+                                if (searchableText.includes(searchTerm)) {
+                                    item.style.display = 'block';
+                                    visibleCount++;
+                                } else {
+                                    item.style.display = 'none';
+                                }
+                            });
+                        }
+
+                        if (noResultsMessage) {
+                            noResultsMessage.style.display = (visibleCount === 0) ? 'block' : 'none';
+                        }
+                    });
+                }
+                // --- END: ADDED FOR SIDEBAR SEARCH ---
+                
+                // --- START: MOBILE VIEW TOGGLE ---
+                const chatPageWrapper = document.getElementById('chat-page-wrapper');
+                const showSidebarBtn = document.getElementById('show-sidebar-btn');
+                const showChatBtn = document.getElementById('show-chat-btn');
+
+                if (showSidebarBtn) {
+                    showSidebarBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        if (chatPageWrapper) chatPageWrapper.classList.add('mobile-sidebar-visible');
+                    });
+                }
+                if (showChatBtn) {
+                    showChatBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        if (chatPageWrapper) chatPageWrapper.classList.remove('mobile-sidebar-visible');
+                    });
+                }
+                // On mobile, clicking a chat in the sidebar should show the chat window
+                if (window.innerWidth <= 768) {
+                    document.querySelectorAll('.sidebar-list .list-item a').forEach(link => {
+                        link.addEventListener('click', (e) => {
+                            // Don't prevent default, just hide the sidebar
+                            if (chatPageWrapper) chatPageWrapper.classList.remove('mobile-sidebar-visible');
+                        });
+                    });
+                }
+                // --- END: MOBILE VIEW TOGGLE ---
             
-            // --- START: ADDED FOR SIDEBAR SEARCH ---
-            const chatSearchInput = document.getElementById('chatSearchInput');
-            const chatList = document.getElementById('chatList');
-            const chatListItems = chatList ? chatList.querySelectorAll('li.list-item') : [];
-            const noResultsMessage = document.getElementById('noResultsMessage');
-
-            if (chatSearchInput) {
-                chatSearchInput.addEventListener('input', function(e) {
-                    const searchTerm = e.target.value.toLowerCase();
-                    let visibleCount = 0;
-
-                    if (chatListItems.length > 0) {
-                        chatListItems.forEach(item => {
-                            const searchableText = item.dataset.searchable || '';
-                            if (searchableText.includes(searchTerm)) {
-                                item.style.display = 'block';
-                                visibleCount++;
-                            } else {
-                                item.style.display = 'none';
-                            }
-                        });
-                    }
-
-                    // Show or hide the 'No results' message
-                    if (noResultsMessage) {
-                        noResultsMessage.style.display = (visibleCount === 0) ? 'block' : 'none';
-                    }
-                });
-            }
-            // --- END: ADDED FOR SIDEBAR SEARCH ---
+            } // End of the 'if (typeof io !== 'undefined')' check
         
-        }); // End of DOMContentLoaded
+        // }); // <-- ★★★ DELETED THE BROKEN DOMContentLoaded WRAPPER ★★★
     
     } // End of the 'if (!window.chatScriptLoaded)' check
 </script>
-{% endblock %}{% endblock %}
+{% endblock %}

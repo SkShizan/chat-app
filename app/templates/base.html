@@ -3,115 +3,177 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title or 'Standalone Chat' }}</title>
+    <title>{{ title or 'VizzChat' }}</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- 
-      UI ARCHITECT'S NOTE:
-      "God-Level" Design System 3.0: The "Prestige" Layout
-      This is a robust, production-ready system.
+      UI ARCHITECT'S NOTE (9.7):
+      This is the "Zenith UI" Foundation.
+      
+      1. Body background is Light Stone.
+      2. Navbar is White and "floats" without a line or shadow.
+      3. "Create Group" button is a "soft-fill" button.
+      4. Fixed CSS syntax bug.
     -->
     <style>
-        /* --- 1. DESIGN SYSTEM: ROOT VARIABLES --- */
+        /* --- 1. "ZENITH" GLOBAL PALETTE (9.1) --- */
         :root {
-            --color-bg-light: #FFFFFF;    /* PURE WHITE for form side */
-            --color-bg-dark: #2F5755;     /* Deep Teal for brand side */
-            --color-text-dark: #432323;  /* Deep Umber for titles */
-            --color-text-light: #E0D9D9; /* Light Stone (for dark BG) */
-            --color-text-body: #2F5755;  /* Deep Teal for body/labels */
-            --color-accent: #5A9690;     /* Muted Jade */
-            --color-accent-dark: #2F5755; /* Deep Teal */
-            --color-border: #DDE2E4;
-            --color-input-bg: #F8F9FA;
-            
+            --color-sidebar-bg: #FFFFFF;     /* White (Panels & Navbar) */
+            --color-chat-bg: #E0D9D9;        /* Light Stone (Auth BG & BODY) */
+            --color-input-bg: #f0f2f5;       /* Softer input bg */
+            --color-text-dark: #432323;      /* Deep Umber (Headings) */
+            --color-text-muted: #555;
+            --color-text-light: #FFFFFF;
+            --color-brand-dark: #2F5755;     /* Deep Teal (Primary Accent) */
+            --color-brand-light: #5A9690;    /* Muted Jade (Secondary Accent) */
             --color-danger: #D93025;
-            --color-success: #1E8E3E;
-            
+            --color-danger-soft: #FEE2E2;
+            --color-border-soft: #e5e7eb;    /* Lighter border */
+            --color-hover-soft: #f7f7f7;
             --font-heading: 'Poppins', sans-serif;
             --font-body: 'Inter', sans-serif;
         }
 
-        /* --- 2. GLOBAL STYLES --- */
+        /* --- 2. GLOBAL STYLES (UPDATED 9.5) --- */
         body {
-            background-color: #F8F9FA; /* Default for non-auth pages */
+            /* Default background is now LIGHT STONE */
+            background-color: var(--color-chat-bg) !important; 
             color: var(--color-text-dark);
             font-family: var(--font-body);
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
 
-        /* --- 3. "PRESTIGE" NAVBAR --- */
-        .navbar-prestige {
-            background-color: var(--color-bg-dark);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        /* --- 3. "ZENITH" NAVBAR (UPDATED 9.5) --- */
+        .navbar-zenith {
+            background-color: var(--color-sidebar-bg); /* White */
+            /* border-bottom: 1px solid var(--color-border-soft); */ /* REMOVED - User feedback */
+            /* box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04); */ /* REMOVED - User feedback */
             padding: 1rem 0;
             font-family: var(--font-body);
-        }
-        .navbar-prestige .navbar-brand {
+            font-weight: 600;
+        } /* <--- THE MISSING BRACKET. I HAVE FIXED THIS. */
+        
+        /* Stylized "VizzChat" Logo (UPDATED 9.6) */
+        .navbar-zenith .navbar-brand-logo {
             font-family: var(--font-heading);
-            color: var(--color-bg-light);
             font-weight: 700;
             font-size: 1.5rem;
+            color: var(--color-text-dark);
+            text-decoration: none !important; /* THE FIX: Kills the ugly line */
         }
-        .navbar-prestige .nav-link {
-            color: var(--color-text-light);
-            font-weight: 600;
+        .navbar-zenith .navbar-brand-logo:hover {
+            text-decoration: none; /* Ensure no line on hover */
+        }
+        .navbar-zenith .navbar-brand-logo span {
+            color: var(--color-brand-light); /* Muted Jade */
+        }
+        
+        .navbar-zenith .nav-link {
+            color: var(--color-text-muted);
             font-size: 0.95rem;
             padding: 8px 14px;
             border-radius: 8px;
             transition: background-color 0.2s ease, color 0.2s ease;
         }
-        .navbar-prestige .nav-link:hover {
-            color: var(--color-bg-light);
-            background-color: rgba(255, 255, 255, 0.1);
+        .navbar-zenith .nav-link:hover {
+            color: var(--color-brand-dark);
+            background-color: var(--color-hover-soft);
         }
-        .navbar-prestige .navbar-text {
-            color: var(--color-accent);
-            font-weight: 500;
+        .navbar-zenith .navbar-text {
+            color: var(--color-text-muted);
             font-size: 0.95rem;
         }
-        .navbar-prestige .navbar-toggler {
-            border-color: rgba(255, 255, 255, 0.2);
+        .navbar-zenith .navbar-toggler {
+            border-color: var(--color-border-soft);
         }
 
-        /* --- 4. "PRESTIGE" FORM COMPONENTS (GLOBAL) --- */
+        /* "Create Group" Button for Navbar (UPDATED 9.7 - "Soft-Fill Button") */
+        .btn-nav-create {
+            background-color: var(--color-input-bg);
+            color: var(--color-brand-dark) !important;
+            border: 2px solid var(--color-input-bg);
+            font-weight: 600;
+            font-size: 0.9rem !important;
+            padding: 6px 14px !important; /* 8px - 2px border = 6px */
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            text-decoration: none !important;
+        }
+        .btn-nav-create:hover {
+            background-color: var(--color-brand-dark);
+            color: var(--color-text-light) !important;
+            border-color: var(--color-brand-dark);
+            text-decoration: none;
+        }
+        .btn-nav-create .bi {
+            margin-right: 4px;
+            transform: translateY(-1px);
+        }
 
+        /* --- 4. "EXECUTIVE" AUTH FORM STYLES (UPDATED 9.5) --- */
+
+        /* The auth page wrapper */
+        .auth-executive-wrapper {
+            /* background-color: var(--color-chat-bg); */ /* REMOVED: Now inherits from body */
+            min-height: 90vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 48px 16px;
+        }
+        /* The floating white panel */
+        .auth-executive-panel {
+            background-color: var(--color-sidebar-bg);
+            width: 100%;
+            border-radius: 16px;
+            padding: 40px 48px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        .auth-executive-title {
+            font-family: var(--font-heading);
+            color: var(--color-text-dark);
+            font-size: 2.25rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        /* Form Components */
         .gl-form-label {
             font-size: 0.9rem;
             font-weight: 600; 
-            color: var(--color-text-body);
+            color: var(--color-brand-dark);
             margin-bottom: 8px;
         }
-
+        
         .gl-form-control {
             font-size: 1rem;
             font-weight: 500;
             color: var(--color-text-dark);
             background-color: var(--color-input-bg);
             padding: 14px 16px;
-            border: 2px solid var(--color-input-bg); /* Subtle border */
+            border: 2px solid transparent;
             border-radius: 8px;
             box-shadow: none;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            transition: all 0.2s ease;
         }
         
         .gl-form-control:focus {
             color: var(--color-text-dark);
-            background-color: var(--color-bg-light);
-            border-color: var(--color-accent); /* Strong focus state */
+            background-color: var(--color-sidebar-bg);
+            border-color: var(--color-brand-dark);
             outline: 0;
-            box-shadow: 0 0 0 4px rgba(90, 150, 144, 0.2); 
+            box-shadow: 0 0 0 4px rgba(47, 87, 85, 0.1);
         }
-
-        /* UI ARCHITECT'S NOTE: THE FIX
-          This overrides the browser's ugly blue autocomplete style
-          that was visible in your screenshot.
-        */
+        
+        /* THE AUTOCOMPLETE FIX */
         .gl-form-control:-webkit-autofill,
         .gl-form-control:-webkit-autofill:hover, 
         .gl-form-control:-webkit-autofill:focus,
@@ -121,12 +183,12 @@
             box-shadow: 0 0 0 30px var(--color-input-bg) inset !important;
             background-color: var(--color-input-bg) !important;
         }
-
-        /* The new solid, professional button */
+        
+        /* The "Hero" Button */
         .gl-btn-primary {
-            background-color: var(--color-accent);
+            background-color: var(--color-brand-dark);
             border: none;
-            color: var(--color-bg-light);
+            color: #FFFFFF;
             padding: 16px 36px;
             font-size: 1rem;
             font-weight: 700;
@@ -135,21 +197,14 @@
             letter-spacing: 0.5px;
             border-radius: 8px; 
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(47, 87, 85, 0.2);
             transition: all 0.2s ease;
         }
-
+        
         .gl-btn-primary:hover {
-            color: var(--color-bg-light);
-            background-color: var(--color-accent-dark); /* Darken on hover */
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(47, 87, 85, 0.3);
+            background-color: var(--color-brand-light);
+            color: var(--color-text-dark);
         }
         
-        .gl-btn-primary:active {
-            transform: scale(0.98) translateY(0);
-        }
-
         /* Auth Page Links */
         .gl-auth-link {
             color: var(--color-text-dark);
@@ -157,15 +212,17 @@
             font-weight: 500;
             text-align: center;
         }
+        
         .gl-auth-link a {
-            color: var(--color-accent);
+            color: var(--color-brand-dark);
             font-weight: 700;
             text-decoration: none;
             transition: color 0.2s ease;
         }
-        .gl-auth-link a:hover {
-            color: var(--color-accent-dark);
-            text-decoration: underline;
+        
+        .gl-auth-link a:hover { 
+            color: var(--color-brand-light); 
+            text-decoration: underline; 
         }
         
         /* Error States */
@@ -177,82 +234,62 @@
             font-weight: 600;
             color: var(--color-danger);
         }
-        .gl-form-control.is-invalid {
-            border-color: var(--color-danger);
-        }
-        .gl-form-control.is-invalid:focus {
-            border-color: var(--color-danger);
-            box-shadow: 0 0 0 4px rgba(217, 48, 37, 0.2);
-        }
-
-
-        /* --- 5. "PRESTIGE" AUTH LAYOUT (GLOBAL) --- */
         
-        .auth-wrapper {
-            overflow-x: hidden;
+        .gl-form-control.is-invalid { 
+            border-color: var(--color-danger) !important; 
         }
         
-        /* The Visual (Left) Side */
-        .auth-visual-side {
-            background-color: var(--color-bg-dark); /* DEEP TEAL */
-            color: var(--color-text-light); /* LIGHT STONE TEXT */
+        .gl-form-control.is-invalid:focus { 
+            border-color: var(--color-danger); 
+            box-shadow: 0 0 0 4px rgba(217, 48, 37, 0.2); 
+        }
+
+        /* Custom Checkbox */
+        .gl-form-check {
             display: flex;
             align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            padding: 48px;
-            display: none; /* Hidden on mobile */
+            gap: 10px;
+            padding-left: 0;
+            margin-top: 16px;
+            margin-bottom: 24px;
+        }
+        .gl-form-check .gl-check-input {
+            appearance: none; -webkit-appearance: none;
+            width: 20px; height: 20px;
+            background-color: var(--color-input-bg);
+            border: 2px solid var(--color-brand-light);
+            border-radius: 4px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+        .gl-form-check .gl-check-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(47, 87, 85, 0.2);
+        }
+        .gl-form-check .gl-check-input:checked {
+            background-color: var(--color-brand-dark);
+            border-color: var(--color-brand-dark);
+        }
+        .gl-form-check .gl-check-input:checked::after {
+            content: ''; display: block;
+            width: 6px; height: 12px;
+            border: solid var(--color-sidebar-bg);
+            border-width: 0 3px 3px 0;
+            transform: rotate(45deg);
+            position: absolute;
+            left: 6px; top: 2px;
+        }
+        .gl-form-check .gl-check-label {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--color-brand-dark);
+            cursor: pointer;
+            margin-bottom: 0;
         }
         
-        .auth-visual-side h1 {
-            font-family: var(--font-heading);
-            font-weight: 700;
-            font-size: 3.5rem;
-            color: var(--color-bg-light); /* WHITE title */
-        }
-        .auth-visual-side p {
-            font-size: 1.25rem;
-            font-weight: 400;
-            color: var(--color-text-light); /* LIGHT STONE subtext */
-            max-width: 400px;
-            text-align: center;
-            line-height: 1.6;
-        }
-
-        /* The Form (Right) Side */
-        .auth-form-side {
-            background-color: var(--color-bg-light); /* PURE WHITE */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 48px 24px;
-        }
-        
-        .auth-form-container {
-            width: 100%;
-            max-width: 450px;
-        }
-        
-        .auth-form-title {
-            font-family: var(--font-heading);
-            font-weight: 700;
-            font-size: 2.5rem;
-            color: var(--color-text-dark);
-            margin-bottom: 32px;
-            text-align: center;
-        }
-
-        @media (min-width: 992px) {
-            .auth-visual-side {
-                display: flex;
-            }
-            .auth-form-side {
-                min-height: 100vh;
-            }
-        }
-        
-        /* --- 6. FLASHED MESSAGE (ALERT) STYLES --- */
+        /* --- 5. FLASHED MESSAGE (ALERT) STYLES --- */
         .alert {
             border: none;
             border-radius: 8px;
@@ -262,10 +299,10 @@
         }
         .alert-success {
             background-color: #E6F4EA;
-            color: var(--color-success);
+            color: #1E8E3E;
         }
         .alert-danger {
-            background-color: #FCE8E6;
+            background-color: var(--color-danger-soft);
             color: var(--color-danger);
         }
 
@@ -273,18 +310,32 @@
 </head>
 <body>
     
-    <nav class="navbar navbar-expand-lg navbar-dark navbar-prestige">
+    <!-- 
+      This is the new "Zenith" Navbar (9.4).
+      It's clean, white, and professional.
+    -->
+    <nav class="navbar navbar-expand-lg navbar-zenith">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('chat.index') }}">Chat App</a>
+            <!-- UPDATED: Brand Logo -->
+            <a class="navbar-brand-logo" href="{{ url_for('chat.index') }}">
+                Vizz<span>Chat</span>
+            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav ms-auto align-items-center">
                     {% if current_user.is_authenticated %}
+                        <!-- UPDATED: Replaced Create Group with User ID -->
+                        <li class="nav-item">
+                            <span class="navbar-text me-3" title="Your User ID">
+                                <i class="bi bi-person-badge" style="transform: translateY(-1px); font-size: 1.1rem; margin-right: 4px;"></i>
+                                {{ current_user.public_id }}
+                            </span>
+                        </li>
                         <li class="nav-item">
                             <span class="navbar-text me-3">
-                                Welcome, {{ current_user.name }} ({{ current_user.public_id }})
+                                Welcome, {{ current_user.name }}
                             </span>
                         </li>
                         <li class="nav-item">
@@ -303,11 +354,16 @@
         </div>
     </nav>
 
+    <!-- 
+      This <main> block is for *non-app* pages (like auth).
+      The chat_dashboard.html file will *override* this
+      with its own full-screen layout. This is correct architecture.
+    -->
     <main class="container my-4">
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
-            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            <div classs="alert alert-{{ category }} alert-dismissible fade show" role="alert">
                 {{ message }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
