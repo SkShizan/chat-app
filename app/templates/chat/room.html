@@ -1,0 +1,1006 @@
+{% extends "base.html" %}
+{% block title %}Messenger{% endblock %}
+
+{% block head_css %}
+    {{ super() }}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+{% endblock %}
+
+{% block content %}
+<style>
+    /* --- 1. "God Level" Theme (Teal/Cream) --- */
+    :root {
+        --primary-color: #016B61;       /* Dark Teal */
+        --secondary-color: #70B2B2;     /* Medium Teal */
+        --light-accent: #9ECFD4;      /* Light Teal/Blue */
+        --bg-cream: #F0F3E5;          /* Lighter, softer Cream */ 
+        
+        --text-dark: #1f2937; 
+        --text-muted: #6b7280; 
+        --text-light: #ffffff;
+        --bg-white: #ffffff;
+        --bg-soft: #f9fafb; 
+        --border-color-soft: rgba(0, 0, 0, 0.07); 
+        --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); 
+        --card-border-radius: 1rem; 
+
+        --color-danger: #EF4444; 
+        --color-danger-soft: #FEE2E2;
+        
+        /* Chat-specific */
+        --bubble-sent-bg: var(--bg-cream); /* Cream for sent messages */
+        --bubble-received-bg: var(--bg-white);
+        --color-unread-bg: #E3F2FD; /* Light blue for unread */
+    }
+
+    /* --- 2. Full-Screen Layout --- */
+    /* This style might be in your main CSS, but is safe here */
+    main.container {
+        padding: 0 !important;
+        margin: 1.5rem auto !important;
+        max-width: 1400px !important; /* Allow it to be wide, but not full-bleed */
+    }
+    .chat-page-wrapper {
+        font-family: 'Inter', sans-serif;
+        background-color: var(--bg-soft); 
+    }
+    .chat-container { 
+        display: grid; 
+        grid-template-columns: 350px 1fr; 
+        height: calc(100vh - 120px); /* Adjust based on navbar/footer */
+        max-height: 800px; 
+        min-height: 600px;
+        border-radius: var(--card-border-radius);
+        box-shadow: var(--card-shadow);
+        border: 1px solid var(--border-color-soft);
+        overflow: hidden;
+    }
+
+    /* --- 3. Sidebar --- */
+    .sidebar { 
+        background-color: var(--bg-white); 
+        border-right: 1px solid var(--border-color-soft); 
+        display: flex; 
+        flex-direction: column;
+    }
+    .sidebar-header {
+        padding: 1.25rem;
+        border-bottom: 1px solid var(--border-color-soft);
+        flex-shrink: 0;
+    }
+    .sidebar-header h2 {
+        font-weight: 800;
+        font-size: 1.5rem;
+        color: var(--text-dark);
+        margin: 0;
+    }
+    .search-input-group {
+        position: relative;
+        margin-top: 1rem;
+    }
+    .search-input {
+        border-radius: 50px;
+        border: 1px solid #d1d5db;
+        padding-left: 2.5rem; /* Icon space */
+        background-color: var(--bg-soft);
+        font-size: 0.9rem;
+        height: 40px;
+    }
+    .search-input:focus {
+         box-shadow: 0 0 0 3px rgba(1, 107, 97, 0.1);
+         border-color: var(--primary-color);
+    }
+    .search-input-group i {
+        position: absolute;
+        left: 0.9rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        z-index: 5;
+    }
+    
+    /* List Styling */
+    .sidebar-list { overflow-y: auto; flex-grow: 1; }
+    .sidebar-list-header {
+        padding: 1rem 1.25rem 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        background-color: var(--bg-soft); /* Soft separator */
+        border-bottom: 1px solid var(--border-color-soft);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    .list-item { 
+        transition: background-color 0.2s; 
+        padding: 0.9rem 1.25rem;
+        border-bottom: 1px solid #f0f0f0 !important;
+        position: relative; 
+    }
+    .list-item:hover { background-color: #f8f9fa; } /* Soft gray hover */
+    
+    /* Active Chat */
+    .list-item.active {
+        background-color: var(--primary-color);
+    }
+     .list-item.active .fw-semibold,
+     .list-item.active .small {
+         color: var(--text-light) !important;
+     }
+
+    /* Unread Status */
+    .list-item.is-unread {
+        background-color: var(--bg-cream); /* Cream for unread */
+        border-left: 4px solid var(--primary-color);
+        padding-left: calc(1.25rem - 4px);
+    }
+    .list-item.is-unread .fw-semibold {
+        font-weight: 800 !important; 
+        color: var(--text-dark) !important;
+    }
+    .unread-badge { 
+        background-color: var(--primary-color) !important; 
+        font-size: 0.7rem; 
+        min-width: 20px;
+        text-align: center;
+        padding: 0.3em 0.6em;
+    }
+    
+    /* Avatar */
+    .avatar-sm {
+        width: 40px; height: 40px; border-radius: 50%;
+        background-color: var(--secondary-color); color: white;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 600; flex-shrink: 0;
+    }
+    .list-item.active .avatar-sm {
+        background-color: rgba(255,255,255,0.3);
+    }
+    
+    /* Create Group Button */
+    .btn-create-group {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        border: none;
+        color: white;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(1, 107, 97, 0.2);
+    }
+    .btn-create-group:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 7px 18px rgba(1, 107, 97, 0.3);
+        color: white;
+    }
+    
+    /* --- 4. Chat Window --- */
+    .chat-window { 
+        background-color: var(--bg-soft); 
+        display: flex; 
+        flex-direction: column; 
+        height: 100%;
+        position: relative; /* For selection bar */
+        overflow: hidden; 
+    }
+    /* Chat Header */
+    .chat-header {
+        background-color: var(--bg-white);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border-color-soft);
+        flex-shrink: 0;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        z-index: 20;
+    }
+     .chat-header h5 {
+         font-weight: 700;
+         color: var(--primary-color);
+     }
+     .chat-header-status {
+         font-size: 0.8rem;
+         color: var(--text-muted);
+         font-weight: 500;
+     }
+     .chat-header-status.typing-indicator {
+         color: var(--primary-color);
+         font-weight: 600;
+         font-style: italic;
+     }
+
+    /* Message Area */
+    .chat-messages {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding: 1rem 1.5rem;
+        height: 100px; /* Placeholder, flex-grow handles real height */
+        background-image: radial-gradient(circle at 1px 1px, rgba(0,0,0,0.02) 1px, transparent 0);
+        background-size: 15px 15px;
+    }
+
+    /* Message Bubbles */
+    .message {
+        margin-bottom: 0.75rem;
+        display: flex;
+        animation: fadeIn 0.3s ease-out;
+        width: 100%;
+        align-items: center; 
+        gap: 5px; 
+        border-radius: 5px;
+        transition: background-color 0.2s;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(5px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .message.sent { 
+        flex-direction: row-reverse; 
+    }
+    .message.received {
+        flex-direction: row; 
+    }
+
+    .message-bubble {
+        padding: 10px 14px;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+        max-width: 70%;
+        color: var(--text-dark);
+        /* Allow text selection in bubbles */
+        user-select: text; 
+        -webkit-user-select: text;
+        -moz-user-select: text;
+    }
+    .message.sent .message-bubble {
+        background-color: var(--bubble-sent-bg); /* Cream */
+        border-bottom-right-radius: 0.25rem;
+    }
+    .message.received .message-bubble {
+        background-color: var(--bubble-received-bg); /* White */
+        border-bottom-left-radius: 0.25rem;
+    }
+    
+    /* Make links in messages clickable */
+    .message-bubble a {
+        color: var(--primary-color);
+        font-weight: 600;
+        text-decoration: underline;
+    }
+
+    /* Message Sender (Group) */
+    .message-sender {
+        font-size: 0.75rem;
+        font-weight: bold;
+        margin-bottom: 0.25rem;
+        color: var(--primary-color); /* Themed sender name */
+    }
+
+    /* Message Input Footer */
+    .chat-footer {
+        background-color: var(--bg-white);
+        padding: 0.75rem 1.5rem;
+        border-top: 1px solid var(--border-color-soft);
+        flex-shrink: 0;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.03);
+        z-index: 20;
+    }
+    #message-input {
+        border-radius: 20px;
+        padding: 0.5rem 1.25rem;
+        border: 1px solid var(--border-color-soft);
+        background-color: var(--bg-soft);
+    }
+     #message-input:focus {
+         box-shadow: 0 0 0 3px rgba(1, 107, 97, 0.1);
+         border-color: var(--primary-color);
+     }
+    .btn-send, .btn-attach {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        width: 48px; height: 48px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+        transition: all 0.2s ease;
+    }
+    .btn-send:hover, .btn-attach:hover {
+        background-color: #01524a; /* Darker teal */
+        border-color: #01524a;
+    }
+    .btn-attach {
+        background-color: var(--secondary-color);
+        border-color: var(--secondary-color);
+    }
+    .btn-attach:hover {
+         background-color: #5f9999;
+         border-color: #5f9999;
+    }
+
+    /* --- 5. Forward/Select UI --- */
+    
+    /* Selection Mode */
+    .message.selected {
+        background-color: var(--bg-cream) !important; /* Cream selection tint */
+    }
+    .message.selected .message-bubble {
+        border: 1px solid var(--primary-color);
+    }
+    
+    .chat-selection-bar {
+        display: none;
+        position: absolute; /* Positions relative to .chat-window */
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: var(--text-light);
+        box-shadow: 0 -4px 15px rgba(0,0,0,0.1);
+        padding: 0.5rem 1rem;
+        z-index: 100; /* Above chat-footer */
+        align-items: center;
+        justify-content: space-between;
+    }
+      .chat-selection-bar #selection-count {
+         font-weight: 700;
+         font-size: 1.1rem;
+     }
+     .btn-cancel-select {
+         background-color: transparent;
+         border: 1px solid rgba(255,255,255,0.5);
+         color: white;
+     }
+     .btn-forward-select {
+         background-color: var(--bg-white);
+         color: var(--primary-color);
+         font-weight: 600;
+     }
+     .btn-forward-select:disabled {
+         background-color: var(--text-muted);
+         opacity: 0.7;
+     }
+
+    /* State changes when in selection mode */
+    .chat-window.in-selection-mode .chat-footer {
+        display: none; /* Hide the normal message input */
+    }
+    .chat-window.in-selection-mode .chat-selection-bar {
+        display: flex; /* Show the new action bar */
+    }
+
+    /* --- 6. Modal Styling --- */
+    .modal-content {
+        border-radius: var(--card-border-radius);
+        border: none;
+    }
+    .modal-header {
+        background-color: var(--bg-cream);
+        border-bottom: 1px solid var(--border-color-soft);
+    }
+     .modal-header .modal-title {
+         font-weight: 700;
+         color: var(--primary-color);
+     }
+     .modal-body { padding: 0; }
+     .forward-target:hover {
+         background-color: var(--bg-cream);
+     }
+     
+     /* JS Filtering */
+    .list-item.hidden-by-filter { display: none !important; }
+    #noResultsMessage {
+        display: none; /* Hidden by default */
+        text-align: center;
+        padding: 2rem;
+        color: var(--text-muted);
+    }
+
+    /* --- 7. Responsive --- */
+    @media (max-width: 768px) {
+         .chat-page-wrapper { margin: 0; padding: 0; }
+         .chat-container { 
+             grid-template-columns: 1fr; /* Single column */
+             height: 100vh; /* Full screen */
+             max-height: none;
+             min-height: none;
+             border-radius: 0;
+         }
+         .sidebar {
+             display: none; /* Hide sidebar */
+         }
+         .chat-window {
+             border-radius: 0;
+         }
+         .chat-messages {
+             padding: 1rem 3%;
+         }
+         /* Make the back-button/header obvious */
+         .sidebar-header {
+             padding-left: 10px !important;
+         }
+    }
+</style>
+
+<div class="card shadow-lg border-0 rounded-4 overflow-hidden chat-page-wrapper">
+    <div class="chat-container">
+        <aside class="sidebar">
+            <div class="sidebar-header border-b d-flex justify-content-between align-items-center p-3">
+                <h2 class="fw-bold fs-5 mb-0 text-dark">Messenger</h2>
+                <a href="{{ url_for('chat.index') }}" class="btn btn-sm btn-outline-dark border-0 text-dark" title="Back to Directory">
+                    <i class="bi bi-person-lines-fill fs-5"></i>
+                </a>
+            </div>
+            
+            <div class="search-input-group p-3">
+                <i class="bi bi-search"></i>
+            <input type="search" id="chatSearchInput" class="form-control search-input" placeholder="Search chats...">
+            </div>
+            
+            <div class="sidebar-list">
+                <h6 class="sidebar-list-header">Recent Chats</h6>
+                <ul class="list-group list-group-flush" id="chatList">
+                    {% for p in participations %}
+                    {% set room = p.room %}
+                    {% set other_user = (room.participants|map(attribute='user')|rejectattr('id', 'equalto', current_user.id)|list)[0] if room.room_type == 'one_to_one' and room.participants.count() > 1 else none %}
+                    {% set chat_name = other_user.name if other_user else room.name %}
+                    
+                    {% set chat_subtitle = '@' + other_user.username if other_user else 'Group Chat' %}
+                    {% set search_id = other_user.id if other_user else room.id %}
+                    
+                    <li class="list-group-item list-item border-0 
+                    {% if room.id == active_room.id %}active{% endif %} 
+                        {% if p.unread_count > 0 %}is-unread{% endif %}"
+                        id="sidebar-room-{{ room.id }}"
+                        
+                        data-searchable="{{ chat_name | lower }} {{ other_user.username | lower if other_user else '' }} {{ other_user.email | lower if other_user else '' }} {{ search_id | string }}">
+                        
+                        <a href="{{ url_for('chat.view_room', room_id=room.id) }}" class="d-flex align-items-center text-decoration-none text-dark">
+                            <div class="avatar-sm me-3">{{ chat_name[0]|upper }}</div>
+                            <div class="flex-grow-1 overflow-hidden">
+                                <div class="fw-semibold text-truncate">{{ chat_name }}</div>
+                                <div class="small text-muted text-truncate">{{ chat_subtitle }}</div>
+                            </div>
+                            {% if p.unread_count > 0 %}
+                            <span class="badge rounded-pill unread-badge">{{ p.unread_count }}</span>
+                            {% else %}
+                            <span class="badge rounded-pill unread-badge" style="display: none;">0</span>
+                            {% endif %}
+                        </a>
+                    </li>
+                    {% endfor %}
+                    <div id="noResultsMessage" class="text-center p-4 text-muted" style="display: none;">
+                        <p class="mb-0">No chats found.</p>
+                    </div>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="chat-window" id="chat-window">
+            <div class="chat-header d-flex justify-content-between align-items-center">
+                <div>
+                    <a href="{{ url_for('chat.index') }}" class="btn btn-sm btn-outline-dark border-0 text-dark d-md-none me-2" title="Back to Chats">
+                        <i class="bi bi-arrow-left"></i>
+                    </a>
+                    
+                    <h5 class="fw-bold mb-0 d-inline">
+                        {%- if active_room.room_type == 'group' %}{{ active_room.name }}
+                        {%- elif chat_partner %}{{ chat_partner.name }}
+                        {%- else %}Chat
+                        {%- endif -%}
+                    </h5>
+                    
+                    <div class="chat-header-status" id="chat-partner-status">
+                        {% if chat_partner %}
+                            {% if is_online %}
+                                Online
+                            {% elif last_seen_ist %}
+                                Last seen at {{ last_seen_ist }}
+                            {% else %}
+                                Offline
+                            {% endif %}
+                        {% else %}
+                            {{ active_room.participants.count() }} Members
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-sm btn-outline-secondary" id="start-selection-btn" title="Select Messages">
+                        <i class="bi bi-check-square"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="chat-messages" id="chat-messages">
+                {% for msg in messages %}
+                <div class="message {% if msg.sender_id == current_user.id %}sent{% else %}received{% endif %}" 
+                     data-message-id="{{ msg.id }}">
+                    
+                    <div class="message-bubble" id="message-{{ msg.id }}">
+                        {% if msg.room.room_type == 'group' and msg.sender_id != current_user.id %}
+                        <div class="message-sender"
+                             style="color: {{ 'blue' if msg.sender_id % 3 == 0 else 'red' if msg.sender_id % 3 == 1 else 'green' }};">
+                            {{ msg.sender.name }}</div>
+                        {% endif %}
+                        <div>
+                            {% if msg.attachment %}
+                            <a href="{{ url_for('chat.get_attachment', attachment_id=msg.attachment.id) }}"
+                               id="attachment-{{ msg.attachment.id }}"
+                               class="message-attachment-link {% if msg.attachment.viewed and msg.sender_id != current_user.id %}attachment-viewed{% endif %}">
+                                <i class="bi bi-file-earmark-arrow-down me-2"></i> {{ msg.attachment.filename }}
+                            </a>
+                            {% else %}
+                            {{ msg.content }}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="chat-footer">
+            <form style="gap: 5px;" id="message-form" class="chat-input-form d-flex">
+                {{ form.csrf_token }}
+                <input type="file" id="file-input" class="d-none">
+                
+                <!-- This is the correct HTML. The <label> now controls the file input. -->
+                <label for="file-input" id="attach-button" class="btn btn-attach" title="Attach File"><i
+    class="bi bi-paperclip fs-5"></i></label>
+                
+                <input type="text" id="message-input" class="form-control" placeholder="Type a message..."
+                       autocomplete="off">
+                <button type="submit" class="btn btn-send"><i class="bi bi-send-fill fs-5"></i></button>
+                </form>
+            </div>
+
+            <div class="chat-selection-bar" id="selection-bar">
+            <button class="btn btn-cancel-select" id="cancel-selection-btn">Cancel</button>
+            <span id="selection-count" class="fw-bold">0 Selected</span>
+
+            <button class="btn btn-forward-select" id="forward-selection-btn" data-bs-toggle="modal" data-bs-target="#forward-modal" disabled>
+            Forward <i class="bi bi-arrow-right-square"></i>
+            </button>
+            </div>
+        </main>
+    </div>
+</div>
+
+<div class="modal fade" id="forward-modal" tabindex="-1" aria-labelledby="forwardModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="forwardModalLabel">Forward Message To...</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0" id="forward-list-container">
+                <ul class="list-group list-group-flush">
+                    {% for p in participations %}
+                        {% set room = p.room %}
+                        {% if room.id != active_room.id %}
+                            {% set other_user = (room.participants|map(attribute='user')|rejectattr('id', 'equalto', current_user.id)|list)[0] if room.room_type == 'one_to_one' and room.participants.count() > 1 else none %}
+                            {% set chat_name = other_user.name if other_user else room.name %}
+                            
+                            {% set chat_subtitle = '@' + other_user.username if other_user else 'Group Chat' %}
+                            
+                            <li class="list-group-item list-group-item-action forward-target d-flex align-items-center"
+                                data-room-id="{{ room.id }}"
+                                data-bs-dismiss="modal"
+                                style="cursor: pointer;">
+                                
+                                <div class="avatar-sm me-3">{{ chat_name[0]|upper }}</div>
+                                <div class="flex-grow-1 overflow-hidden">
+                                    <div class="fw-semibold text-truncate">{{ chat_name }}</div>
+                                    <div class="small text-muted text-truncate">{{ chat_subtitle }}</div>
+                                </div>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+    // --- ★★★ THIS IS THE FINAL FIX FOR MULTIPLE MESSAGES/UPLOADS ★★★ ---
+    // This `if` check prevents the entire script from running more than ONCE,
+    // even if the page hot-reloads. This stops all duplicate listeners.
+    if (!window.chatScriptLoaded) {
+        window.chatScriptLoaded = true; // Set the flag
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // Ensure socket.io is loaded from base.html
+            if (typeof io === 'undefined') {
+                console.error('Socket.IO client library not loaded. Make sure base.html includes it.');
+                return;
+            }
+
+            const socket = io();
+            const room_id = "{{ active_room.id }}";
+            const current_user_id = {{current_user.id}};
+            const chat_partner_id = {{chat_partner.id if chat_partner else 'null' }};
+            const room_type = "{{ active_room.room_type }}";
+            const current_user_name = "{{ current_user.name }}";
+
+            const messagesContainer = document.getElementById('chat-messages');
+            const statusElement = document.getElementById('chat-partner-status');
+            const originalStatus = statusElement ? statusElement.textContent.trim() : 'Offline';
+            const input = document.getElementById('message-input');
+            const attachButton = document.getElementById('attach-button');
+            const fileInput = document.getElementById('file-input');
+            const form = document.getElementById('message-form');
+
+            // --- START: MODIFIED FOR MULTI-FORWARD ---
+
+            // --- State Management Variables ---
+            let isInSelectionMode = false;
+            let selectedMessageIds = [];
+
+            // --- DOM Elements for Selection ---
+            const chatWindow = document.getElementById('chat-window');
+            const selectionBar = document.getElementById('selection-bar');
+            const startSelectionBtn = document.getElementById('start-selection-btn');
+            const cancelSelectionBtn = document.getElementById('cancel-selection-btn');
+            const forwardSelectionBtn = document.getElementById('forward-selection-btn');
+            const selectionCount = document.getElementById('selection-count');
+            const forwardListContainer = document.getElementById('forward-list-container');
+
+            // --- State Helper Functions ---
+            function updateSelectionCount() {
+                if (selectionCount) {
+                    selectionCount.textContent = `${selectedMessageIds.length} Selected`;
+                }
+                if (forwardSelectionBtn) {
+                    forwardSelectionBtn.disabled = selectedMessageIds.length === 0;
+                }
+            }
+
+            function enterSelectionMode() {
+                isInSelectionMode = true;
+                if (chatWindow) {
+                    chatWindow.classList.add('in-selection-mode');
+                }
+                updateSelectionCount();
+            }
+
+            function exitSelectionMode() {
+                isInSelectionMode = false;
+                if (chatWindow) {
+                    chatWindow.classList.remove('in-selection-mode');
+                }
+                selectedMessageIds = [];
+                // Remove all .selected classes from messages
+                if (messagesContainer) {
+                    messagesContainer.querySelectorAll('.message.selected').forEach(el => {
+                        el.classList.remove('selected');
+                    });
+                }
+            }
+
+            function toggleMessageSelection(messageElement) {
+                const msgId = messageElement.dataset.messageId;
+                if (!msgId) return; // Not a selectable message
+
+                const index = selectedMessageIds.indexOf(msgId);
+                if (index > -1) {
+                    // Already selected, de-select it
+                    selectedMessageIds.splice(index, 1);
+                    messageElement.classList.remove('selected');
+                } else {
+                    // Not selected, select it
+                    selectedMessageIds.push(msgId);
+                    messageElement.classList.add('selected');
+                }
+                updateSelectionCount();
+            }
+
+            // --- Event Listeners for Selection ---
+            if (startSelectionBtn) {
+                startSelectionBtn.addEventListener('click', enterSelectionMode);
+            }
+            if (cancelSelectionBtn) {
+                cancelSelectionBtn.addEventListener('click', exitSelectionMode);
+            }
+
+            // --- Combined Click Handler for Message Area ---
+            if (messagesContainer) {
+                messagesContainer.addEventListener('click', function(e) {
+                    if (isInSelectionMode) {
+                        // --- SELECTION MODE ---
+                        e.preventDefault();
+                        e.stopPropagation(); // Stop other listeners
+                        
+                        const messageElement = e.target.closest('.message');
+                        if (messageElement) {
+                            toggleMessageSelection(messageElement);
+                        }
+                    } 
+                    // No 'else' block needed, just let default link behavior happen
+                });
+            }
+
+            // --- Combined Click Handler for Forward Modal ---
+            if (forwardListContainer) {
+                forwardListContainer.addEventListener('click', function (e) {
+                    const target = e.target.closest('.forward-target');
+                    if (!target) return;
+                    
+                    const destinationRoomId = target.dataset.roomId;
+
+                    if (isInSelectionMode) {
+                        // --- MULTI-FORWARD ---
+                        if (selectedMessageIds.length > 0) {
+                            socket.emit('forward_multiple_messages', {
+                                original_message_ids: selectedMessageIds,
+                                destination_room_id: destinationRoomId
+                            });
+                        }
+                        exitSelectionMode(); // Exit mode after forwarding
+                    }
+                });
+            }
+            // --- END: ADDED FOR MULTI-FORWARD ---
+
+
+            // --- Scroll to bottom
+            function scrollToBottom() {
+                if (messagesContainer) {
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                }
+            }
+            scrollToBottom();
+
+            // --- Add message to UI
+            function addMessageToUI(msg, isSent) {
+                if (!messagesContainer) return;
+
+                const item = document.createElement('div');
+                item.className = 'message ' + (isSent ? 'sent' : 'received');
+                
+                if (msg.id) {
+                    item.dataset.messageId = msg.id;
+                }
+
+                const bubble = document.createElement('div');
+                bubble.className = 'message-bubble';
+                if (msg.id) {
+                    bubble.id = 'message-' + msg.id;
+                }
+
+                // --- Sender (for group only) ---
+                if (!isSent && msg.room_type === 'group' && msg.sender_name) {
+                    const senderNameDiv = document.createElement('div');
+                    senderNameDiv.className = 'message-sender';
+                    senderNameDiv.textContent = msg.sender_name;
+                    // Simple color logic
+                    const colors = ['#016B61', '#3B82F6', '#92400E', '#7C3AED'];
+                    senderNameDiv.style.color = colors[msg.sender_id % colors.length];
+                    bubble.appendChild(senderNameDiv);
+                }
+
+                const content = document.createElement('div');
+                if (msg.attachment) {
+                    const link = document.createElement('a');
+                    link.href = `/chat/attachment/${msg.attachment.id}`;
+                    link.id = 'attachment-' + msg.attachment.id;
+                    link.className = 'message-attachment-link';
+                    if (msg.attachment.viewed && msg.sender_id !== current_user_id) {
+                        link.classList.add('attachment-viewed');
+                    }
+                    link.innerHTML = `<i class="bi bi-file-earmark-arrow-down me-2"></i> ${msg.attachment.filename}`;
+                    content.appendChild(link);
+                } else {
+                    // Auto-link URLs in messages
+                    const urlRegex = /(https?:\/\/[^\s]+)/g;
+                    const linkedText = msg.content.replace(urlRegex, '<a href="$1" target="_blank">$1</a>');
+                    content.innerHTML = linkedText;
+                }
+
+                bubble.appendChild(content);
+                item.appendChild(bubble);
+                messagesContainer.appendChild(item);
+
+                setTimeout(scrollToBottom, 0);
+            }
+
+            // --- Socket.IO Connection ---
+            socket.on('connect', () => {
+                socket.emit('join', {room: room_id});
+                socket.emit('join', {room: `user_${current_user_id}`});
+            });
+
+            // --- Presence ---
+            socket.on('user_status_update', (data) => {
+                if (data.user_id == chat_partner_id && statusElement) {
+                    statusElement.textContent = data.status;
+                    statusElement.classList.remove('typing-indicator');
+                }
+            });
+
+            // --- Typing ---
+            socket.on('typing_started', (data) => {
+                if (data.user_id == chat_partner_id && statusElement) {
+                    statusElement.textContent = `${data.user_name} is typing...`;
+                    statusElement.classList.add('typing-indicator');
+                }
+            });
+
+            socket.on('typing_stopped', (data) => {
+                if (data.user_id == chat_partner_id && statusElement) {
+                    statusElement.textContent = originalStatus;
+                    statusElement.classList.remove('typing-indicator');
+                }
+            });
+
+            if (input) {
+                let typingTimeout;
+                input.addEventListener('input', () => {
+                    clearTimeout(typingTimeout);
+                    socket.emit('start_typing', {room: room_id, user_name: current_user_name});
+                    typingTimeout = setTimeout(() => {
+                        socket.emit('stop_typing', {room: room_id});
+                    }, 2000);
+                });
+            }
+
+            // --- Message listener ---
+            socket.on('message', (msg) => {
+                msg.room_type = room_type;  // Inject manually if not sent
+
+                // We check if it's a forward. If it is, we ALWAYS show it.
+                // Otherwise, we use the old logic to prevent echo.
+                if (msg.is_forward) {
+                    addMessageToUI(msg, msg.sender_id === current_user_id);
+                } else if (msg.sender_id !== current_user_id || msg.attachment) {
+                    addMessageToUI(msg, msg.sender_id === current_user_id);
+                }
+            });
+
+            // --- Attachment viewed ---
+            socket.on('attachment_viewed', (data) => {
+                const link = document.getElementById(`attachment-${data.attachment_id}`);
+                if (link) {
+                    link.classList.add('attachment-viewed');
+                }
+            });
+
+            // --- Attachment deleted (after recipient download) ---
+            socket.on('attachment_deleted', function(data) {
+                let attachmentLink = document.getElementById(`attachment-${data.attachment_id}`);
+                if (attachmentLink) {
+                    let contentDiv = attachmentLink.parentElement;
+                    if (contentDiv) {
+                        contentDiv.textContent = '[Attachment deleted]';
+                    }
+                }
+            });
+
+            // --- Send message ---
+            if (form) {
+                form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const text = input.value.trim();
+                    if (text) {
+                        const optimisticMsg = {
+                            content: text,
+                            sender_name: current_user_name,
+                            sender_id: current_user_id,
+                            attachment: null,
+                            room_type: room_type,
+                        };
+                        addMessageToUI(optimisticMsg, true);
+                        socket.emit('send_message', {message: text, room: room_id});
+                        input.value = '';
+                    }
+                });
+            }
+
+            // --- File upload ---
+            
+            // --- ★★★ FIX #2: THE BUGGY JAVASCRIPT BLOCK IS GONE ★★★ ---
+            // The `if (attachButton)` block has been DELETED.
+            // The <label> in the HTML now handles the click.
+            // --- ★★★ END OF FIX ★AN ★★★ ---
+
+            if (fileInput) {
+                fileInput.addEventListener('change', () => {
+                    const file = fileInput.files[0];
+                    if (!file) return;
+                    if (file.size > 100 * 1024 * 1024) { // 100MB limit
+                        alert('File is too large! Max 100MB.');
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    
+                    // Also disable the label, which has the ID 'attach-button'
+                    if (attachButton) {
+                        attachButton.style.pointerEvents = 'none'; // Disable label clicks
+                        attachButton.style.opacity = '0.5';
+                    }
+                    if(form) {
+                        form.querySelector('button[type="submit"]').disabled = true;
+                    }
+                    if(input) {
+                        input.placeholder = 'Uploading...';
+                    }
+
+                    const csrf_token = document.querySelector("input[name='csrf_token']").value;
+                    fetch(`/chat/upload-attachment/${room_id}`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrf_token
+                        },
+                        body: formData
+                    })
+                        .then(res => {
+                            if (!res.ok) {
+                                return res.text().then(text => { 
+                                    throw new Error('Server responded with ' + res.status + ': ' + text) 
+                                });
+                            }
+                            return res.json();
+                        })
+                        .then(data => {
+                            if (data.error) {
+                                alert('Upload failed: ' + data.error);
+                            }
+                            // Otherwise, message with attachment will be broadcast from server
+                        })
+                        .catch(err => {
+                            console.error('Upload failed:', err);
+                            alert('Error uploading file. Check the console for details.');
+                        })
+                        .finally(() => {
+                            if (attachButton) {
+                                attachButton.style.pointerEvents = 'auto'; // Re-enable label
+                                attachButton.style.opacity = '1';
+                            }
+                            if(form) {
+                                form.querySelector('button[type="submit"]').disabled = false;
+                            }
+                            if(input) {
+                                input.placeholder = 'Type a message...';
+                            }
+                            fileInput.value = '';
+                        });
+                });
+            }
+            
+            // --- START: ADDED FOR SIDEBAR SEARCH ---
+            const chatSearchInput = document.getElementById('chatSearchInput');
+            const chatList = document.getElementById('chatList');
+            const chatListItems = chatList ? chatList.querySelectorAll('li.list-item') : [];
+            const noResultsMessage = document.getElementById('noResultsMessage');
+
+            if (chatSearchInput) {
+                chatSearchInput.addEventListener('input', function(e) {
+                    const searchTerm = e.target.value.toLowerCase();
+                    let visibleCount = 0;
+
+                    if (chatListItems.length > 0) {
+                        chatListItems.forEach(item => {
+                            const searchableText = item.dataset.searchable || '';
+                            if (searchableText.includes(searchTerm)) {
+                                item.style.display = 'block';
+                                visibleCount++;
+                            } else {
+                                item.style.display = 'none';
+                            }
+                        });
+                    }
+
+                    // Show or hide the 'No results' message
+                    if (noResultsMessage) {
+                        noResultsMessage.style.display = (visibleCount === 0) ? 'block' : 'none';
+                    }
+                });
+            }
+            // --- END: ADDED FOR SIDEBAR SEARCH ---
+        
+        }); // End of DOMContentLoaded
+    
+    } // End of the 'if (!window.chatScriptLoaded)' check
+</script>
+{% endblock %}{% endblock %}

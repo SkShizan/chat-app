@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title or 'Standalone Chat' }}</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- 
+      UI ARCHITECT'S NOTE:
+      "God-Level" Design System 3.0: The "Prestige" Layout
+      This is a robust, production-ready system.
+    -->
+    <style>
+        /* --- 1. DESIGN SYSTEM: ROOT VARIABLES --- */
+        :root {
+            --color-bg-light: #FFFFFF;    /* PURE WHITE for form side */
+            --color-bg-dark: #2F5755;     /* Deep Teal for brand side */
+            --color-text-dark: #432323;  /* Deep Umber for titles */
+            --color-text-light: #E0D9D9; /* Light Stone (for dark BG) */
+            --color-text-body: #2F5755;  /* Deep Teal for body/labels */
+            --color-accent: #5A9690;     /* Muted Jade */
+            --color-accent-dark: #2F5755; /* Deep Teal */
+            --color-border: #DDE2E4;
+            --color-input-bg: #F8F9FA;
+            
+            --color-danger: #D93025;
+            --color-success: #1E8E3E;
+            
+            --font-heading: 'Poppins', sans-serif;
+            --font-body: 'Inter', sans-serif;
+        }
+
+        /* --- 2. GLOBAL STYLES --- */
+        body {
+            background-color: #F8F9FA; /* Default for non-auth pages */
+            color: var(--color-text-dark);
+            font-family: var(--font-body);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* --- 3. "PRESTIGE" NAVBAR --- */
+        .navbar-prestige {
+            background-color: var(--color-bg-dark);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 1rem 0;
+            font-family: var(--font-body);
+        }
+        .navbar-prestige .navbar-brand {
+            font-family: var(--font-heading);
+            color: var(--color-bg-light);
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+        .navbar-prestige .nav-link {
+            color: var(--color-text-light);
+            font-weight: 600;
+            font-size: 0.95rem;
+            padding: 8px 14px;
+            border-radius: 8px;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+        .navbar-prestige .nav-link:hover {
+            color: var(--color-bg-light);
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .navbar-prestige .navbar-text {
+            color: var(--color-accent);
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+        .navbar-prestige .navbar-toggler {
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* --- 4. "PRESTIGE" FORM COMPONENTS (GLOBAL) --- */
+
+        .gl-form-label {
+            font-size: 0.9rem;
+            font-weight: 600; 
+            color: var(--color-text-body);
+            margin-bottom: 8px;
+        }
+
+        .gl-form-control {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--color-text-dark);
+            background-color: var(--color-input-bg);
+            padding: 14px 16px;
+            border: 2px solid var(--color-input-bg); /* Subtle border */
+            border-radius: 8px;
+            box-shadow: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .gl-form-control:focus {
+            color: var(--color-text-dark);
+            background-color: var(--color-bg-light);
+            border-color: var(--color-accent); /* Strong focus state */
+            outline: 0;
+            box-shadow: 0 0 0 4px rgba(90, 150, 144, 0.2); 
+        }
+
+        /* UI ARCHITECT'S NOTE: THE FIX
+          This overrides the browser's ugly blue autocomplete style
+          that was visible in your screenshot.
+        */
+        .gl-form-control:-webkit-autofill,
+        .gl-form-control:-webkit-autofill:hover, 
+        .gl-form-control:-webkit-autofill:focus,
+        .gl-form-control:-webkit-autofill:active {
+            -webkit-text-fill-color: var(--color-text-dark) !important;
+            -webkit-box-shadow: 0 0 0 30px var(--color-input-bg) inset !important;
+            box-shadow: 0 0 0 30px var(--color-input-bg) inset !important;
+            background-color: var(--color-input-bg) !important;
+        }
+
+        /* The new solid, professional button */
+        .gl-btn-primary {
+            background-color: var(--color-accent);
+            border: none;
+            color: var(--color-bg-light);
+            padding: 16px 36px;
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: var(--font-body);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-radius: 8px; 
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(47, 87, 85, 0.2);
+            transition: all 0.2s ease;
+        }
+
+        .gl-btn-primary:hover {
+            color: var(--color-bg-light);
+            background-color: var(--color-accent-dark); /* Darken on hover */
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(47, 87, 85, 0.3);
+        }
+        
+        .gl-btn-primary:active {
+            transform: scale(0.98) translateY(0);
+        }
+
+        /* Auth Page Links */
+        .gl-auth-link {
+            color: var(--color-text-dark);
+            font-size: 0.95rem;
+            font-weight: 500;
+            text-align: center;
+        }
+        .gl-auth-link a {
+            color: var(--color-accent);
+            font-weight: 700;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+        .gl-auth-link a:hover {
+            color: var(--color-accent-dark);
+            text-decoration: underline;
+        }
+        
+        /* Error States */
+        .gl-invalid-feedback {
+            display: block; 
+            width: 100%;
+            margin-top: 0.25rem;
+            font-size: .875em;
+            font-weight: 600;
+            color: var(--color-danger);
+        }
+        .gl-form-control.is-invalid {
+            border-color: var(--color-danger);
+        }
+        .gl-form-control.is-invalid:focus {
+            border-color: var(--color-danger);
+            box-shadow: 0 0 0 4px rgba(217, 48, 37, 0.2);
+        }
+
+
+        /* --- 5. "PRESTIGE" AUTH LAYOUT (GLOBAL) --- */
+        
+        .auth-wrapper {
+            overflow-x: hidden;
+        }
+        
+        /* The Visual (Left) Side */
+        .auth-visual-side {
+            background-color: var(--color-bg-dark); /* DEEP TEAL */
+            color: var(--color-text-light); /* LIGHT STONE TEXT */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            padding: 48px;
+            display: none; /* Hidden on mobile */
+        }
+        
+        .auth-visual-side h1 {
+            font-family: var(--font-heading);
+            font-weight: 700;
+            font-size: 3.5rem;
+            color: var(--color-bg-light); /* WHITE title */
+        }
+        .auth-visual-side p {
+            font-size: 1.25rem;
+            font-weight: 400;
+            color: var(--color-text-light); /* LIGHT STONE subtext */
+            max-width: 400px;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        /* The Form (Right) Side */
+        .auth-form-side {
+            background-color: var(--color-bg-light); /* PURE WHITE */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 48px 24px;
+        }
+        
+        .auth-form-container {
+            width: 100%;
+            max-width: 450px;
+        }
+        
+        .auth-form-title {
+            font-family: var(--font-heading);
+            font-weight: 700;
+            font-size: 2.5rem;
+            color: var(--color-text-dark);
+            margin-bottom: 32px;
+            text-align: center;
+        }
+
+        @media (min-width: 992px) {
+            .auth-visual-side {
+                display: flex;
+            }
+            .auth-form-side {
+                min-height: 100vh;
+            }
+        }
+        
+        /* --- 6. FLASHED MESSAGE (ALERT) STYLES --- */
+        .alert {
+            border: none;
+            border-radius: 8px;
+            padding: 16px;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+        .alert-success {
+            background-color: #E6F4EA;
+            color: var(--color-success);
+        }
+        .alert-danger {
+            background-color: #FCE8E6;
+            color: var(--color-danger);
+        }
+
+    </style>
+</head>
+<body>
+    
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-prestige">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('chat.index') }}">Chat App</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item">
+                            <span class="navbar-text me-3">
+                                Welcome, {{ current_user.name }} ({{ current_user.public_id }})
+                            </span>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.logout') }}">Logout</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.login') }}">Login</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.register') }}">Register</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container my-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    {% if current_user.is_authenticated %}
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+    {% endif %}
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>
+

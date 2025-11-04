@@ -1,0 +1,471 @@
+{% extends "base.html" %}
+{% block title %}Messenger{% endblock %}
+
+{% block head_css %}
+    {{ super() }}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+{% endblock %}
+
+{% block content %}
+<style>
+    /* --- 1. Theme Colors & Base --- */
+    :root {
+        --primary-color: #016B61;      /* Dark Teal */
+        --secondary-color: #70B2B2;    /* Medium Teal */
+        --light-accent: #9ECFD4;     /* Light Teal/Blue */
+        --bg-cream: #F0F3E5;         /* Lighter, softer Cream */ 
+        
+        --text-dark: #1f2937; 
+        --text-muted: #6b7280; 
+        --text-light: #ffffff;
+        --bg-white: #ffffff;
+        --bg-soft: #f9fafb; 
+        --border-color-soft: rgba(0, 0, 0, 0.07); 
+        --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); 
+        --card-border-radius: 1rem; 
+
+        --color-accent-dark: #01524a;
+        --color-success: #10B981;
+        --color-danger: #EF4444; 
+        --color-danger-soft: #FEE2E2;
+        --color-unread-bg: #F0F3E5; /* Cream background for unread */
+    }
+    
+    /* Remove default app container padding/margin for full screen */
+    /* This style might be in your main CSS, but is safe here */
+    main.container {
+        padding: 0 !important;
+        margin: 1.5rem auto !important;
+        max-width: 1400px !important; /* Allow it to be wide, but not full-bleed */
+    }
+    .chat-page-wrapper {
+        font-family: 'Inter', sans-serif;
+        background-color: var(--bg-soft); 
+    }
+
+    /* 2. General Layout */
+    .chat-container { 
+        display: grid; 
+        grid-template-columns: 350px 1fr; 
+        height: calc(100vh - 120px); /* Adjust based on navbar/footer */
+        max-height: 800px; 
+        min-height: 600px;
+        border-radius: var(--card-border-radius);
+        box-shadow: var(--card-shadow);
+        border: 1px solid var(--border-color-soft);
+        overflow: hidden;
+    }
+    .sidebar { 
+        background-color: var(--bg-white);
+        border-right: 1px solid var(--border-color-soft); 
+        display: flex; 
+        flex-direction: column;
+    }
+    .chat-window { 
+        background-color: var(--bg-soft); 
+        display: flex; 
+        flex-direction: column; 
+        justify-content: center;
+        align-items: center;
+        /* Background texture */
+        background-image: radial-gradient(circle at 1px 1px, rgba(0,0,0,0.02) 1px, transparent 0);
+        background-size: 15px 15px;
+    }
+    
+    /* 3. Sidebar Header & Search */
+    .sidebar-header {
+        padding: 1.25rem;
+        border-bottom: 1px solid var(--border-color-soft);
+    }
+    .sidebar-header h2 {
+        font-weight: 800;
+        font-size: 1.5rem;
+        color: var(--text-dark);
+        margin: 0;
+    }
+    .search-input-group {
+        position: relative;
+        margin-top: 1rem;
+    }
+    .search-input {
+        border-radius: 50px;
+        border: 1px solid #d1d5db;
+        padding-left: 2.5rem; /* Icon space */
+        background-color: var(--bg-soft);
+        font-size: 0.9rem;
+        height: 40px;
+    }
+    .search-input:focus {
+         box-shadow: 0 0 0 3px rgba(1, 107, 97, 0.1);
+         border-color: var(--primary-color);
+    }
+    .search-input-group i {
+        position: absolute;
+        left: 0.9rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        z-index: 5;
+    }
+    
+    /* 4. List Styling */
+    .sidebar-list { overflow-y: auto; flex-grow: 1; }
+    .sidebar-list-header {
+        padding: 1rem 1.25rem 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        background-color: var(--bg-soft); /* Soft separator */
+        border-bottom: 1px solid var(--border-color-soft);
+    }
+    .list-item { 
+        transition: background-color 0.2s; 
+        padding: 0.9rem 1.25rem;
+        border-bottom: 1px solid #f0f0f0 !important;
+        position: relative; 
+    }
+    .list-item:hover { background-color: var(--bg-cream); }
+    
+    /* Unread Status Enhancements */
+    .list-item.is-unread {
+        background-color: var(--color-unread-bg);
+        border-left: 4px solid var(--primary-color);
+        padding-left: calc(1.25rem - 4px);
+    }
+    .list-item.is-unread .fw-semibold {
+        font-weight: 800 !important; /* Bolder */
+        color: var(--text-dark) !important;
+    }
+     .list-item.is-unread .text-muted {
+         color: var(--text-dark) !important;
+     }
+    .unread-badge { 
+        background-color: var(--primary-color) !important; 
+        font-size: 0.7rem; 
+        min-width: 20px;
+        text-align: center;
+        padding: 0.3em 0.6em;
+    }
+    
+    /* Avatar */
+    .avatar-sm {
+        width: 40px; height: 40px; border-radius: 50%;
+        background-color: var(--secondary-color); color: white;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 600; flex-shrink: 0;
+    }
+
+    /* 5. Delete Button */
+    .delete-btn-wrapper {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        opacity: 0;
+        transition: opacity 0.2s ease-in-out;
+    }
+    .list-item:hover .delete-btn-wrapper {
+        opacity: 1;
+    }
+    .btn-delete-convo {
+        background: transparent;
+        border: 1px solid transparent;
+        color: var(--text-muted);
+        padding: 0.2rem 0.5rem;
+    }
+    .btn-delete-convo:hover {
+        background-color: var(--color-danger-soft);
+        color: var(--color-danger);
+    }
+    
+    /* 6. Create Group Button */
+    .btn-create-group {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        border: none;
+        color: white;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(1, 107, 97, 0.2);
+    }
+    .btn-create-group:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 7px 18px rgba(1, 107, 97, 0.3);
+        color: white;
+    }
+    
+    /* 7. Chat Window Placeholder */
+    .chat-window .placeholder-icon {
+        font-size: 4rem;
+        color: var(--light-accent);
+    }
+    .chat-window h3 {
+        color: var(--text-dark);
+        font-weight: 700;
+    }
+    
+    /* 8. JS Filtering */
+    .list-item.hidden-by-filter {
+        display: none !important;
+    }
+    #noResultsMessage, #userListEmptyMessage {
+        display: none; /* Hidden by default */
+        text-align: center;
+        padding: 2rem;
+        color: var(--text-muted);
+    }
+
+    /* 9. Responsive */
+    @media (max-width: 768px) {
+         .chat-page-wrapper { margin: 0; padding: 0; }
+         .chat-container { 
+             grid-template-columns: 1fr; /* Single column */
+             height: 100vh; /* Full screen */
+             max-height: none;
+             min-height: none;
+             border-radius: 0;
+         }
+         .chat-window {
+             display: none; /* Hide placeholder on mobile */
+         }
+         .sidebar-header h2 { font-size: 1.25rem; }
+    }
+</style>
+
+<div class="card shadow-lg border-0 rounded-4 overflow-hidden chat-page-wrapper">
+    <div class="chat-container">
+        <aside class="sidebar">
+            <div class="p-4 border-b sidebar-header">
+                <h2 class="fw-bold fs-5 mb-0 text-dark">Messenger</h2>
+                
+                <form action="{{ url_for('chat.index') }}" method="GET" class="search-input-group">
+                    <i class="bi bi-search"></i>
+                    <input type="search" id="chatSearchInput" name="q" class="form-control search-input" 
+                           placeholder="Search users by name, email, or ID..." value="{{ search_query or '' }}">
+                </form>
+            </div>
+            
+            <div class="sidebar-list flex-grow-1">
+                <h6 class="px-4 pt-3 pb-2 text-uppercase small text-muted border-top">Recent Chats</h6>
+                <ul class="list-group list-group-flush" id="chatList">
+                    {% for p in participations %}
+                        {% set room = p.room %}
+                        {% set other_user = (room.participants|map(attribute='user')|rejectattr('id', 'equalto', current_user.id)|list)[0] if room.room_type == 'one_to_one' and room.participants.count() > 1 else none %}
+                        {% set chat_name = other_user.name if other_user else room.name %}
+                        
+                        {% set chat_subtitle = other_user.username if other_user else 'Group Chat' %}
+                        
+                        <li class="list-group-item list-item border-0 {% if p.unread_count > 0 %}is-unread{% endif %}" 
+                            id="sidebar-room-{{ room.id }}" 
+                            
+                            data-searchable="{{ chat_name | lower }} {{ chat_subtitle | lower }} {{ other_user.email | lower if other_user else '' }}">
+                            
+                            <a href="{{ url_for('chat.view_room', room_id=room.id) }}" class="d-flex align-items-center text-decoration-none text-dark">
+                                <div class="avatar-sm me-3">{{ chat_name[0]|upper }}</div>
+                                
+                                <div class="flex-grow-1 overflow-hidden">
+                                    <div class="fw-semibold text-truncate">{{ chat_name }}</div>
+                                    <div class="small text-muted text-truncate">{{ chat_subtitle }}</div>
+                                </div>
+                                
+                                {% if p.unread_count > 0 %}
+                                <span class="badge rounded-pill unread-badge">{{ p.unread_count }}</span>
+                                {% else %}
+                                <span class="badge rounded-pill unread-badge" style="display: none;">0</span>
+                                {% endif %}
+                            </a>
+                            
+                            <div class="delete-btn-wrapper">
+                                <form action="{{ url_for('chat.delete_conversation', room_id=room.id) }}" 
+                                      method="POST" 
+                                      onsubmit="return confirm('Are you sure you want to permanently delete this entire conversation? This action cannot be undone.');">
+                                    
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                                    <button type="submit" class="btn btn-sm btn-delete-convo" title="Delete Conversation">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+
+                <h6 class="px-4 pt-3 pb-2 text-uppercase small text-muted border-top mt-3">User Directory</h6>
+                <ul class="list-group list-group-flush" id="userList">
+                    {% if users %}
+                        {% for user in users %}
+                         <li class="list-group-item list-item border-0" 
+                             
+                             data-searchable="{{ user.name | lower }} {{ user.username | lower }} {{ user.email | lower }} {{ user.public_id }}">
+                            
+                            <a href="{{ url_for('chat.start_chat', recipient_id=user.id) }}" class="d-flex align-items-center text-decoration-none text-dark">
+                                <div class="avatar-sm me-3">{{ user.name[0]|upper }}</div>
+                                <div>
+                                    <div class="fw-semibold">{{ user.name }}</div>
+                                    <div class="small text-muted">@{{ user.username }}</div>
+                                </div>
+                            </a>
+                        </li>
+                        {% endfor %}
+                    {% else %}
+                        <div id="userListEmptyMessage" class="text-center p-4 text-muted" style="display: block;">
+                            {% if search_query %}
+                                <p class="mb-0">No users found matching '{{ search_query }}'.</p>
+                            {% else %}
+                                <p class="mb-0">Search for users above to start a new chat.</p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </ul>
+                
+                <div id="noResultsMessage" class="text-center p-4 text-muted" style="display: none;">
+                    <p class="mb-0">No chats or users found for your search.</p>
+                </div>
+            </div>
+            
+            <div class="p-3 border-top bg-white">
+                <a href="{{ url_for('chat.create_group') }}" class="btn btn-create-group w-100"><i class="bi bi-people-fill me-1"></i> Create New Group</a>
+            </div>
+
+        </aside>
+
+        <main class="chat-window">
+            <div class="text-center">
+                <i class="bi bi-chat-dots placeholder-icon"></i>
+                <h3 class="mt-3 text-muted">Select a conversation</h3>
+                <p class="text-muted">Start a chat by searching for a user or clicking an existing conversation.</p>
+            </div>
+        </main>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+    // Debounce function (general utility)
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => { func(...args); }, wait);
+        };
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // Use '{{ current_user.id }}' which is an integer, not a string
+        const current_user_id = {{ current_user.id }};
+
+        // --- Socket.IO Setup ---
+        // We check if `io` is defined, which it should be since base.html includes it.
+        if (typeof io !== 'undefined') {
+            const socket = io();
+
+            socket.on('connect', () => {
+                // Join a personal room to receive targeted unread notifications
+                socket.emit('join', { room: `user_${current_user_id}` });
+            });
+            
+            // Listen for unread count updates and update the UI in real-time
+            socket.on('unread_update', (data) => {
+                const sidebarItem = document.getElementById(`sidebar-room-${data.room_id}`);
+                if (sidebarItem) {
+                    const badge = sidebarItem.querySelector('.unread-badge');
+                    if (badge) {
+                        badge.textContent = data.count;
+                        badge.style.display = data.count > 0 ? 'inline-block' : 'none';
+                        // Toggle the professional bold/highlight style
+                        sidebarItem.classList.toggle('is-unread', data.count > 0);
+                        // Move the item to the top visually if it received a new message
+                        if (data.count > 0) {
+                            const list = sidebarItem.parentNode;
+                            list.prepend(sidebarItem);
+                        }
+                    }
+                }
+            });
+        } else {
+            console.error('Socket.IO client library not loaded.');
+        }
+        
+        // --- DYNAMIC CLIENT-SIDE SEARCH FILTER ---
+        // This script *supplements* the server-side search by filtering
+        // the "Recent Chats" list, which the server doesn't filter.
+        const searchInput = document.getElementById('chatSearchInput');
+        const chatList = document.getElementById('chatList');
+        const userList = document.getElementById('userList');
+        
+        const allChatItems = chatList ? chatList.querySelectorAll('.list-item') : [];
+        const allUserItems = userList ? userList.querySelectorAll('.list-item') : [];
+        
+        const noResultsMessage = document.getElementById('noResultsMessage');
+        const userListEmptyMessage = document.getElementById('userListEmptyMessage');
+        
+        // We only need the *client-side* filter if the server *didn't* do a search.
+        // If `search_query` exists, the server has already filtered the user list.
+        // We only need to filter the "Recent Chats" list.
+        const serverSearchQuery = "{{ search_query or '' }}".toLowerCase().trim();
+
+        const filterLists = () => {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            
+            // If the user is just typing the same query the server already ran, do nothing
+            if (searchTerm === serverSearchQuery && serverSearchQuery !== '') {
+                 // But we still need to filter the chat list
+            }
+
+            let chatFoundCount = 0;
+            let userFoundCount = allUserItems.length; // Assume users are visible unless hidden
+
+            // Filter Recent Chats (always client-side)
+            allChatItems.forEach(item => {
+                const searchData = item.getAttribute('data-searchable');
+                if (searchData && searchData.includes(searchTerm)) {
+                    item.style.display = 'block'; // Or 'flex' if needed
+                    chatFoundCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            // Only filter User List if the server *didn't* already
+            // (i.e., if the search term is different from the page load search)
+            if (searchTerm !== serverSearchQuery) {
+                userFoundCount = 0; // Reset count, we are filtering manually
+                allUserItems.forEach(item => {
+                    const searchData = item.getAttribute('data-searchable');
+                    if (searchData && searchData.includes(searchTerm)) {
+                        item.style.display = 'block';
+                        userFoundCount++;
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            }
+
+            // --- Toggle "No Results" Messages ---
+            
+            // Hide/show the server-rendered "empty" message
+            if (userListEmptyMessage) {
+                userListEmptyMessage.style.display = (userFoundCount === 0 && allUserItems.length === 0) ? 'block' : 'none';
+            }
+
+            // Hide/show the *client-side* "no results" message
+            if (noResultsMessage) {
+                const totalFound = chatFoundCount + userFoundCount;
+                noResultsMessage.style.display = (totalFound === 0 && searchTerm !== '') ? 'block' : 'none';
+            }
+        };
+        
+        // We wrap the input event in a debounce to prevent it from
+        // firing on every single keystroke, improving performance.
+        searchInput.addEventListener('input', debounce(filterLists, 200));
+
+        // If the server performed a search, we need to *also*
+        // filter the client-side "Recent Chats" list to match.
+        if (serverSearchQuery !== '') {
+            filterLists();
+        }
+    });
+</script>
+{% endblock %} {% endblock %}

@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- 
+  UI ARCHITECT'S NOTE (7.1):
+  This is the "Executive" UI, applied to the Login page
+  for perfect architectural consistency with register.html.
+  
+  1. Light Background (#E0D9D9).
+  2. Floating White Panel (#FFFFFF).
+  3. Panel width is set to 480px, as a login form
+     is more focused than a register form.
+  4. Includes a new, custom-styled "Remember Me" checkbox.
+-->
+
+<style>
+    /* --- 1. FONT IMPORTS --- */
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+    /* --- 2. ROOT VARIABLES (Consistent with register.html) --- */
+    :root {
+        --color-bg-light: #E0D9D9;    /* Light Stone (The Background) */
+        --color-panel-white: #FFFFFF; /* The Panel */
+        --color-input-bg: #f4f6f8;   /* Subtle Input Background */
+        --color-text-dark: #432323;  /* Deep Umber (Headings) */
+        --color-accent-dark: #2F5755; /* Deep Teal (Labels & Buttons) */
+        --color-accent-light: #5A9690;/* Muted Jade (Hover & Borders) */
+        --color-danger: #D93025;
+        --font-heading: 'Poppins', sans-serif;
+        --font-body: 'Inter', sans-serif;
+    }
+
+    /* --- 3. THE "EXECUTIVE" LAYOUT --- */
+    
+    /* Override 'base.html' body. */
+    body {
+        background-color: var(--color-bg-light) !important;
+        font-family: var(--font-body);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+    
+    /* Override Bootstrap's .container */
+    main.container {
+        max-width: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    /* The wrapper that centers the panel */
+    .auth-executive-wrapper {
+        min-height: 90vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 48px 16px;
+    }
+
+    /* The "Executive" Panel */
+    .auth-executive-panel {
+        background-color: var(--color-panel-white);
+        max-width: 480px; /* Narrower for a focused login form */
+        width: 100%;
+        border-radius: 16px;
+        padding: 48px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+    
+    .auth-executive-title {
+        font-family: var(--font-heading);
+        color: var(--color-text-dark);
+        font-size: 2.25rem;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 32px;
+    }
+
+    /* --- 4. ROBUST, GOD-LEVEL COMPONENTS --- */
+    
+    .gl-form-label {
+        font-size: 0.9rem;
+        font-weight: 600; 
+        color: var(--color-accent-dark);
+        margin-bottom: 8px;
+    }
+    
+    .gl-form-control {
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--color-text-dark);
+        background-color: var(--color-input-bg);
+        padding: 14px 16px;
+        border: 2px solid transparent;
+        border-radius: 8px;
+        box-shadow: none;
+        transition: all 0.2s ease;
+    }
+    
+    .gl-form-control:focus {
+        color: var(--color-text-dark);
+        background-color: var(--color-panel-white);
+        border-color: var(--color-accent-dark);
+        outline: 0;
+        box-shadow: 0 0 0 4px rgba(47, 87, 85, 0.1);
+    }
+    
+    /* THE AUTOCOMPLETE FIX */
+    .gl-form-control:-webkit-autofill,
+    .gl-form-control:-webkit-autofill:hover, 
+    .gl-form-control:-webkit-autofill:focus,
+    .gl-form-control:-webkit-autofill:active {
+        -webkit-text-fill-color: var(--color-text-dark) !important;
+        -webkit-box-shadow: 0 0 0 30px var(--color-input-bg) inset !important;
+        box-shadow: 0 0 0 30px var(--color-input-bg) inset !important;
+        background-color: var(--color-input-bg) !important;
+    }
+    
+    /* The "Hero" Button */
+    .gl-btn-primary {
+        background-color: var(--color-accent-dark);
+        border: none;
+        color: #FFFFFF;
+        padding: 16px 36px;
+        font-size: 1rem;
+        font-weight: 700;
+        font-family: var(--font-body);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-radius: 8px; 
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .gl-btn-primary:hover {
+        background-color: var(--color-accent-light);
+    }
+    
+    .gl-auth-link {
+        color: var(--color-text-dark);
+        font-size: 0.95rem;
+        font-weight: 500;
+        text-align: center;
+    }
+    
+    .gl-auth-link a {
+        color: var(--color-accent-dark);
+        font-weight: 700;
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+    
+    .gl-auth-link a:hover { 
+        color: var(--color-accent-light); 
+        text-decoration: underline; 
+    }
+    
+    /* Error Feedback */
+    .gl-invalid-feedback {
+        display: block; 
+        width: 100%;
+        margin-top: 0.25rem;
+        font-size: .875em;
+        font-weight: 600;
+        color: var(--color-danger);
+    }
+    
+    .gl-form-control.is-invalid { 
+        border-color: var(--color-danger) !important; 
+    }
+    
+    .gl-form-control.is-invalid:focus { 
+        border-color: var(--color-danger); 
+        box-shadow: 0 0 0 4px rgba(217, 48, 37, 0.2); 
+    }
+
+    /* --- 5. NEW: CUSTOM "Remember Me" CHECKBOX --- */
+    .gl-form-check {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding-left: 0;
+        margin-top: 16px;
+        margin-bottom: 24px;
+    }
+    .gl-form-check .gl-check-input {
+        /* Hide default checkbox */
+        appearance: none;
+        -webkit-appearance: none;
+        width: 20px;
+        height: 20px;
+        background-color: var(--color-input-bg);
+        border: 2px solid var(--color-accent-light);
+        border-radius: 4px;
+        cursor: pointer;
+        position: relative;
+        transition: all 0.2s ease;
+        flex-shrink: 0; /* Prevent shrinking */
+    }
+    .gl-form-check .gl-check-input:focus {
+        outline: none;
+        box-shadow: 0 0 0 4px rgba(47, 87, 85, 0.2);
+    }
+    .gl-form-check .gl-check-input:checked {
+        background-color: var(--color-accent-dark);
+        border-color: var(--color-accent-dark);
+    }
+    /* The checkmark */
+    .gl-form-check .gl-check-input:checked::after {
+        content: '';
+        display: block;
+        width: 6px;
+        height: 12px;
+        border: solid var(--color-panel-white);
+        border-width: 0 3px 3px 0;
+        transform: rotate(45deg);
+        position: absolute;
+        left: 6px;
+        top: 2px;
+    }
+    .gl-form-check .gl-check-label {
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: var(--color-accent-dark);
+        cursor: pointer;
+        margin-bottom: 0; /* Override bootstrap */
+    }
+
+</style>
+
+<!-- 
+  This is the "Executive" Layout (7.1).
+  Light background, wide white panel, robust components.
+-->
+<div class="auth-executive-wrapper">
+    
+    <div class="auth-executive-panel">
+        
+        <h2 class="auth-executive-title">Login</h2>
+        
+        <!-- Flashed messages, styled to fit -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+        
+        <form method="POST" action="" novalidate>
+            {{ form.hidden_tag() }}
+            
+            <!-- Email -->
+            <div class.="mb-4">
+                <label class="gl-form-label" for="{{ form.email.id }}">
+                    {{ form.email.label.text }}
+                </label>
+                {{ form.email(class="form-control gl-form-control" + (" is-invalid" if form.email.errors else "")) }}
+                {% for error in form.email.errors %}
+                    <div class="gl-invalid-feedback">{{ error }}</div>
+                {% endfor %}
+            </div>
+            
+            <!-- Password -->
+            <div class="mb-3 mt-4">
+                <label class="gl-form-label" for="{{ form.password.id }}">
+                    {{ form.password.label.text }}
+                </label>
+                {{ form.password(class="form-control gl-form-control" + (" is-invalid" if form.password.errors else "")) }}
+                {% for error in form.password.errors %}
+                    <div class="gl-invalid-feedback">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <!-- Remember Me -->
+            <div class="gl-form-check">
+                {{ form.remember_me(class="gl-check-input", id="remember_me") }}
+                {{ form.remember_me.label(class="gl-check-label", for="remember_me") }}
+            </div>
+
+            <!-- Submit Button -->
+            <div class="d-grid">
+                {{ form.submit(class="btn gl-btn-primary") }}
+            </div>
+        </form>
+        
+        <!-- Footer Link -->
+        <div class="gl-auth-link mt-4">
+            <p>New User? <a href="{{ url_for('auth.register') }}">Click to Register</a></p>
+        }
+        </div>
+
+    </div>
+</div>
+{% endblock %}

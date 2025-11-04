@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- 
+  UI ARCHITECT'S NOTE (7.0):
+  You are right. The dark background was a failure.
+  
+  This is the "Executive" UI. It is what I should have
+  built from the start.
+  
+  1. Light Background (#E0D9D9) as requested.
+  2. Wide Form Panel (768px) as requested.
+  3. Rock-solid, clean components on a pure white panel.
+  
+  This is the definitive, professional design.
+-->
+
+<style>
+    /* --- 1. FONT IMPORTS --- */
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+    /* --- 2. ROOT VARIABLES --- */
+    :root {
+        --color-bg-light: #E0D9D9;    /* Light Stone (The Background) */
+        --color-panel-white: #FFFFFF; /* The Panel */
+        --color-input-bg: #f4f6f8;   /* Subtle Input Background */
+        --color-text-dark: #432323;  /* Deep Umber (Headings) */
+        --color-accent-dark: #2F5755; /* Deep Teal (Labels & Buttons) */
+        --color-accent-light: #5A9690;/* Muted Jade (Hover) */
+        --color-danger: #D93025;
+        --font-heading: 'Poppins', sans-serif;
+        --font-body: 'Inter', sans-serif;
+    }
+
+    /* --- 3. THE "EXECUTIVE" LAYOUT --- */
+    
+    /* Override 'base.html' body.
+      This creates the clean, light environment.
+    */
+    body {
+        background-color: var(--color-bg-light) !important;
+        font-family: var(--font-body);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+    
+    /* Override Bootstrap's .container to be a simple wrapper.
+      This 'main' tag is from base.html.
+    */
+    main.container {
+        max-width: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    /* The wrapper that centers the panel */
+    .auth-executive-wrapper {
+        min-height: 90vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 48px 16px; /* 16px for mobile gutters */
+    }
+
+    /* The "Executive" Panel.
+      Clean, white, and WIDER.
+    */
+    .auth-executive-panel {
+        background-color: var(--color-panel-white);
+        max-width: 768px; /* WIDER, as requested */
+        width: 100%;
+        border-radius: 16px;
+        padding: 48px; /* Spacious padding */
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+    
+    .auth-executive-title {
+        font-family: var(--font-heading);
+        color: var(--color-text-dark);
+        font-size: 2.25rem;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 32px;
+    }
+
+    /* --- 4. ROBUST, GOD-LEVEL COMPONENTS --- */
+    
+    .gl-form-label {
+        font-size: 0.9rem;
+        font-weight: 600; 
+        color: var(--color-accent-dark); /* Teal labels */
+        margin-bottom: 8px;
+    }
+    
+    .gl-form-control {
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--color-text-dark);
+        background-color: var(--color-input-bg);
+        padding: 14px 16px;
+        border: 2px solid transparent; /* Cleaner border */
+        border-radius: 8px;
+        box-shadow: none;
+        transition: all 0.2s ease;
+    }
+    
+    .gl-form-control:focus {
+        color: var(--color-text-dark);
+        background-color: var(--color-panel-white);
+        border-color: var(--color-accent-dark); /* Teal border on focus */
+        outline: 0;
+        box-shadow: 0 0 0 4px rgba(47, 87, 85, 0.1); /* Subtle Teal shadow */
+    }
+    
+    /* THE AUTOCOMPLETE FIX.
+      This fixes the bug in your screenshot.
+    */
+    .gl-form-control:-webkit-autofill,
+    .gl-form-control:-webkit-autofill:hover, 
+    .gl-form-control:-webkit-autofill:focus,
+    .gl-form-control:-webkit-autofill:active {
+        -webkit-text-fill-color: var(--color-text-dark) !important;
+        -webkit-box-shadow: 0 0 0 30px var(--color-input-bg) inset !important;
+        box-shadow: 0 0 0 30px var(--color-input-bg) inset !important;
+        background-color: var(--color-input-bg) !important;
+    }
+    
+    /* The "Hero" Button */
+    .gl-btn-primary {
+        background-color: var(--color-accent-dark); /* Teal */
+        border: none;
+        color: #FFFFFF;
+        padding: 16px 36px;
+        font-size: 1rem;
+        font-weight: 700;
+        font-family: var(--font-body);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-radius: 8px; 
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .gl-btn-primary:hover {
+        background-color: var(--color-accent-light); /* Jade on hover */
+    }
+    
+    .gl-auth-link {
+        color: var(--color-text-dark);
+        font-size: 0.95rem;
+        font-weight: 500;
+        text-align: center;
+    }
+    
+    .gl-auth-link a {
+        color: var(--color-accent-dark);
+        font-weight: 700;
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+    
+    .gl-auth-link a:hover { 
+        color: var(--color-accent-light); 
+        text-decoration: underline; 
+    }
+    
+    .gl-invalid-feedback {
+        display: block; 
+        width: 100%;
+        margin-top: 0.25rem;
+        font-size: .875em;
+        font-weight: 600;
+        color: var(--color-danger);
+    }
+    
+    .gl-form-control.is-invalid { 
+        border-color: var(--color-danger) !important; 
+    }
+    
+    .gl-form-control.is-invalid:focus { 
+        border-color: var(--color-danger); 
+        box-shadow: 0 0 0 4px rgba(217, 48, 37, 0.2); 
+    }
+
+</style>
+
+<!-- 
+  This is the "Executive" Layout (7.0).
+  Light background, wide white panel, robust components.
+-->
+<div class="auth-executive-wrapper">
+    
+    <div class="auth-executive-panel">
+        
+        <h2 class="auth-executive-title">Create Account</h2>
+        
+        <!-- Flashed messages, styled to fit -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+        
+        <form method="POST" action="" novalidate>
+            {{ form.hidden_tag() }}
+            
+            <div class="row">
+                <!-- Username -->
+                <div class="col-md-6 mb-4">
+                    <label class="gl-form-label" for="{{ form.username.id }}">
+                        {{ form.username.label.text }}
+                    </label>
+                    {{ form.username(class="form-control gl-form-control" + (" is-invalid" if form.username.errors else "")) }}
+                    {% for error in form.username.errors %}
+                        <div class="gl-invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <!-- Name -->
+                <div class="col-md-6 mb-4">
+                    <label class="gl-form-label" for="{{ form.name.id }}">
+                        {{ form.name.label.text }}
+                    </Label>
+                    {{ form.name(class="form-control gl-form-control" + (" is-invalid" if form.name.errors else "")) }}
+                    {% for error in form.name.errors %}
+                        <div class="gl-invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Email -->
+            <div class.="mb-4">
+                <label class="gl-form-label" for="{{ form.email.id }}">
+                    {{ form.email.label.text }}
+                </label>
+                {{ form.email(class="form-control gl-form-control" + (" is-invalid" if form.email.errors else "")) }}
+                {% for error in form.email.errors %}
+                    <div class="gl-invalid-feedback">{{ error }}</div>
+                {% endfor %}
+            </div>
+            
+            <div class="row">
+                <!-- Password -->
+                <div class="col-md-6 mb-4">
+                    <label class="gl-form-label" for="{{ form.password.id }}">
+                        {{ form.password.label.text }}
+                    </label>
+                    {{ form.password(class="form-control gl-form-control" + (" is-invalid" if form.password.errors else "")) }}
+                    {% for error in form.password.errors %}
+                        <div class="gl-invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <!-- Confirm Password -->
+                <div class="col-md-6 mb-4">
+                    <label class="gl-form-label" for="{{ form.password2.id }}">
+                        {{ form.password2.label.text }}
+                    </Label>
+                    {{ form.password2(class="form-control gl-form-control" + (" is-invalid" if form.password2.errors else "")) }}
+                    {% for error in form.password2.errors %}
+                        <div class="gl-invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="d-grid mt-4">
+                {{ form.submit(class="btn gl-btn-primary") }}
+            </div>
+        </form>
+        
+        <!-- Footer Link -->
+        <div class="gl-auth-link mt-4">
+            <p>Already have an account? <a href="{{ url_for('auth.login') }}">Sign In</a></p>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+

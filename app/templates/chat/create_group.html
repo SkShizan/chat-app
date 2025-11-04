@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+
+{% block head_css %}
+    {{ super() }}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+{% endblock %}
+
+{% block content %}
+<style>
+    /* --- 1. Theme Colors & Base --- */
+    :root {
+        --primary-color: #016B61;       /* Dark Teal */
+        --secondary-color: #70B2B2;     /* Medium Teal */
+        --light-accent: #9ECFD4;      /* Light Teal/Blue */
+        --bg-cream: #F0F3E5;          /* Lighter, softer Cream */ 
+        
+        --text-dark: #1f2937; 
+        --text-muted: #6b7280; 
+        --text-light: #ffffff;
+        --bg-white: #ffffff;
+        --bg-soft: #f9fafb; 
+        --border-color-soft: rgba(0, 0, 0, 0.07); 
+        --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); 
+        --card-border-radius: 1rem; 
+
+        --color-accent-dark: #01524a;
+        --color-success: #10B981;
+    }
+    /* Apply background to body */
+    body { background-color: var(--bg-soft) !important; } 
+
+    .create-group-wrapper {
+        font-family: 'Inter', sans-serif;
+        background-color: var(--bg-soft); 
+        padding: 2.5rem; 
+        border-radius: var(--card-border-radius); 
+        margin: 1.5rem auto; 
+        max-width: 800px;
+    }
+
+
+    /* --- 2. Card and Header Styling --- */
+    .create-group-card {
+        background: var(--bg-white);
+        border-radius: var(--card-border-radius);
+        box-shadow: var(--card-shadow);
+        border: none;
+        overflow: hidden;
+    }
+    .card-header-themed {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); /* Themed Gradient */
+        color: var(--text-light);
+        padding: 2rem 1.5rem;
+        text-align: center;
+        position: relative;
+    }
+     .card-header-themed h1 {
+         font-weight: 700;
+         font-size: 1.75rem;
+         margin-bottom: 0.25rem;
+         position: relative; z-index: 2;
+     }
+     .card-header-themed p {
+         opacity: 0.8;
+         position: relative; z-index: 2;
+     }
+     /* Icon in header */
+     .card-header-themed i {
+         font-size: 2.5rem;
+         margin-bottom: 0.5rem;
+         display: block;
+         position: relative; z-index: 2;
+     }
+
+    /* --- 3. Form Layout and Inputs --- */
+    .card-body {
+        padding: 2.5rem;
+    }
+    .form-label {
+        font-weight: 600;
+        color: var(--text-dark);
+        font-size: 0.95rem;
+        margin-bottom: 0.5rem;
+    }
+     .form-control, .form-select {
+         border-radius: 0.5rem;
+         padding: 0.75rem 1rem;
+         font-size: 0.95rem;
+         border-color: #d1d5db;
+     }
+     .form-control:focus {
+         border-color: var(--primary-color);
+         box-shadow: 0 0 0 3px rgba(1, 107, 97, 0.1);
+     }
+    
+    /* Search Input (Now isolated and pure JS) */
+    .search-input-group {
+        position: relative;
+        margin-bottom: 1rem; /* Less margin */
+    }
+    #memberSearchInput { /* Changed ID for clarity */
+        padding-left: 2.5rem; /* Space for icon */
+        border-radius: 50px;
+        background-color: var(--bg-soft);
+        border: 1px solid var(--border-color-soft);
+    }
+    .search-input-group i {
+        position: absolute;
+        left: 0.8rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        z-index: 5;
+    }
+
+
+    /* --- 4. Member Selection List (Fix + Style) --- */
+    .selection-list {
+        max-height: 300px; /* Taller list */
+        overflow-y: auto;
+        border: 1px solid var(--border-color-soft);
+        border-radius: 0.6rem;
+        padding: 0; 
+        background-color: var(--bg-white); /* White background */
+    }
+    .list-group-item-action {
+        cursor: pointer;
+        padding: 0.75rem 1rem;
+        transition: background-color 0.2s;
+        border-bottom: 1px solid var(--border-color-soft); /* Subtle separator */
+        background-color: transparent !important; 
+        margin: 0; 
+    }
+    .list-group-item-action:hover {
+        background-color: var(--bg-cream) !important; /* Cream hover */
+    }
+    .list-group-item-action:last-child {
+        border-bottom: none;
+    }
+
+    .list-group-item-action input[type="checkbox"] {
+        transform: scale(1.1);
+        margin-right: 15px;
+        border-color: var(--secondary-color); 
+        transition: all 0.2s ease;
+    }
+    .list-group-item-action input[type="checkbox"]:checked {
+         background-color: var(--primary-color);
+         border-color: var(--primary-color);
+    }
+
+    .avatar-sm-small {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background-color: var(--secondary-color); 
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        flex-shrink: 0;
+    }
+    .info-text {
+        font-size: 0.85rem; 
+        color: var(--text-muted);
+    }
+    
+    /* JS Filtered Class */
+    .list-group-item-action.hidden-by-filter {
+        display: none !important; /* Use !important to override Bootstrap */
+    }
+
+
+    /* --- 5. Buttons --- */
+    .btn-submit-themed {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        border: none;
+        color: white;
+        font-weight: 600;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.5rem;
+        transition: all 0.2s ease;
+    }
+    .btn-submit-themed:hover {
+        background: linear-gradient(135deg, #01524a, #5f9999);
+        border-color: var(--color-accent-dark);
+        transform: translateY(-2px);
+    }
+    .btn-cancel-themed {
+        background: transparent; border: 1px solid #d1d5db; color: var(--text-muted);
+        font-weight: 500; padding: 0.75rem 1.5rem; border-radius: 0.5rem;
+        transition: all 0.2s ease; 
+    }
+    .btn-cancel-themed:hover { 
+        background: var(--bg-soft); color: var(--text-dark); border-color: #adb5bd;
+    }
+    
+    .form-card-footer {
+         background-color: var(--bg-soft);
+         border-top: 1px solid var(--border-color-soft);
+         padding: 1.5rem 2.5rem;
+         display: flex;
+         justify-content: flex-end;
+         gap: 0.75rem;
+    }
+</style>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7 col-md-9">
+            <div class="card create-group-card border-0">
+                
+                <div class="card-header-themed text-white text-center">
+                    <div class="header-content">
+                        <i class="bi bi-people-fill"></i>
+                        <h1 class="mb-0">Create a New Group Chat</h1>
+                        <p class="mb-0">Select members for your new team conversation.</p>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    
+                    <form method="POST" action="{{ url_for('chat.create_group') }}" novalidate id="createGroupForm">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-4">
+                            <label for="{{ form.name.id }}" class="form-label">Group Name</label>
+                            {{ form.name(class="form-control form-control-lg", placeholder="e.g., Marketing Team, Project Apollo") }}
+                            {% for error in form.name.errors %}
+                                <span class="text-danger small d-block mt-1">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        
+                        <h5 class="fw-bold mb-3 mt-4 text-dark">Select Members</h5>
+                        <div class="search-input-group">
+                            <i class="bi bi-search"></i>
+                            <input type="search" id="memberSearchInput" class="form-control" placeholder="Search by name, username, or email...">
+                        </div>
+                        
+                        <div class="selection-list list-group mb-4" id="memberList">
+                            {% for employee in employees %}
+                                <!-- ★★★ FIX #1: Updated data-search-terms to match new User model ★★★ -->
+                                <label class="list-group-item list-group-item-action d-flex align-items-center" 
+                                       data-search-terms="{{ employee.name | lower }} {{ employee.username | lower }} {{ employee.email | lower }} {{ employee.public_id | lower }}">
+                                    
+                                    <input type="checkbox" name="members" value="{{ employee.id }}" class="form-check-input flex-shrink-0 member-checkbox" 
+                                           {% if employee.id in (form.members.data or []) %}checked{% endif %}>
+                                    
+                                    <div class="avatar-sm-small ms-3 me-3">{{ employee.name[0]|upper }}</div>
+                                    
+                                    <div>
+                                        <div class="fw-semibold text-dark">{{ employee.name }}</div>
+                                        <!-- ★★★ FIX #2: Replaced job_title with username ★★★ -->
+                                        <div class="info-text">@{{ employee.username }} &middot; {{ employee.email }}</div>
+                                    </div>
+                                </label>
+                            {% else %}
+                                <div class="p-4 text-center text-muted" id="noInitialResults">No employees found.</div>
+                            {% endfor %}
+                             <div class="p-4 text-center text-muted" id="noResultsRuntimeMessage" style="display: none;">No members found matching your search.</div>
+                        </div>
+                        
+                        <div class="form-check form-switch my-4">
+                            {{ form.include_creator(class="form-check-input") }}
+                            {{ form.include_creator.label(class="form-check-label text-dark") }}
+                        </div>
+                        
+                        {% for error in form.members.errors %}
+                            <span class="text-danger small d-block mb-3">{{ error }}</span>
+                        {% endfor %}
+
+                        </form>
+                </div>
+                
+                <div class="form-card-footer">
+                    <a href="{{ url_for('chat.index') }}" class="btn btn-cancel-themed me-2">Cancel</a>
+                    <button type="submit" class="btn btn-submit-themed" form="createGroupForm">
+                        <i class="bi bi-people-fill"></i> Create Group
+                    </button>
+                </div>
+
+                </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Debounce function (general utility)
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => { func(...args); }, wait);
+        };
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('memberSearchInput');
+        const memberList = document.getElementById('memberList');
+        const allMemberLabels = memberList ? memberList.querySelectorAll('.list-group-item-action') : [];
+        const noResultsRuntimeMessage = document.getElementById('noResultsRuntimeMessage');
+        const initialNoResultsMessage = document.getElementById('noInitialResults');
+        
+        // Hide initial "no results" message if the list is populated
+        if (initialNoResultsMessage && allMemberLabels.length > 0) {
+            initialNoResultsMessage.style.display = 'none';
+        }
+
+        // --- DYNAMIC SEARCH FILTER ---
+        if (searchInput && allMemberLabels.length > 0) {
+            
+            const filterMembers = () => {
+                const searchTerm = searchInput.value.toLowerCase().trim();
+                let foundCount = 0;
+
+                allMemberLabels.forEach(label => {
+                    const searchTerms = label.getAttribute('data-search-terms');
+
+                    if (searchTerms && searchTerms.includes(searchTerm)) {
+                        label.classList.remove('hidden-by-filter');
+                        label.style.display = 'flex'; // Show element
+                        foundCount++;
+                    } else {
+                        label.classList.add('hidden-by-filter');
+                        label.style.display = 'none'; // Hide element
+                    }
+                });
+                
+                // Toggle "No Results" Message (runtime)
+                if (noResultsRuntimeMessage) {
+                    noResultsRuntimeMessage.style.display = (foundCount === 0) ? 'block' : 'none';
+                }
+            };
+
+            // Apply filter on input change
+            searchInput.addEventListener('input', debounce(filterMembers, 200)); 
+            
+        }
+        
+        // --- CHECKBOX TOGGLE HANDLER (Allows clicking label to check box) ---
+        if (memberList) {
+            memberList.addEventListener('click', function(e) {
+                const label = e.target.closest('.list-group-item-action');
+                if (!label) return;
+                
+                const checkbox = label.querySelector('input[type="checkbox"]');
+                
+                // Ensure checkbox exists and the target was NOT an input element itself
+                if (checkbox && e.target.tagName !== 'INPUT') { 
+                    // Manually toggle the checkbox state
+                    checkbox.checked = !checkbox.checked;
+                }
+                
+                e.stopPropagation();
+            });
+        }
+        
+    });
+</script>
+{% endblock %}
