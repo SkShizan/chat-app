@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% block title %}Call with {{ callee.name }}{% endblock %}
+{% block head_css %}
+{{ super() }}
+<style>
+.call-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at center, #eaf5f4, #d2ebe8);
+}
+.call-user-name {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #014d49;
+  margin-bottom: 2rem;
+}
+.call-controls {
+  display: flex;
+  gap: 2rem;
+}
+.call-btn {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: none;
+  font-size: 2rem;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.call-btn.accept { background-color: #28a745; }
+.call-btn.reject { background-color: #dc3545; }
+.call-btn.end { background-color: #b20000; }
+.status-text {
+  font-size: 1.1rem;
+  margin-top: 1rem;
+  color: #333;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="call-container">
+  <h2 class="call-user-name">{{ callee.name }}</h2>
+  <div id="call-status" class="status-text">Connecting...</div>
+
+  <div class="call-controls mt-4" id="outgoing-controls">
+    <button class="call-btn end" id="endCallBtn"><i class="bi bi-telephone-x"></i></button>
+  </div>
+
+  <div class="call-controls mt-4 d-none" id="incoming-controls">
+    <button class="call-btn accept" id="acceptCallBtn"><i class="bi bi-telephone-fill"></i></button>
+    <button class="call-btn reject" id="rejectCallBtn"><i class="bi bi-telephone-x"></i></button>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+const socket = io();
+const calleeId = {{ callee.id }};
+const currentUserId = {{ current_user.id }};
+const statusText = document.getElementById('call-status');
+const incomingControls = document.getElementById('incoming-controls');
+const outgoingControls = document.getElementById('outgoing-controls');
+const endCallBtn = document.getElementById('endCallBtn');
+const acceptBtn = document.getElementById('acceptCallBtn');
+const rejectBtn = document.getElementById('rejectCallBtn');
+
+let peerConnection;
+let localStream;
+
+const servers = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+
+// Start the outgoing call
+async function startCall() {
+  localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  peerConnection = new RTCPeerConnection(servers);
+  localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+  peerConnection.ontrack = e => {
+    const audio = document.createElement('audio');
+    audio.srcObject = e.streams[0];
+    audio.autoplay = true;
+    document.body.appendChild(audio);
+  };
+
+  peerConnection.onicecandidate = e => {
+    if (e.candidate) {
+      socket.emit('webrtc-ice-candidate', { to_user_id: calleeId, candidate: e.candidate });
+    }
+  };
+
+  socket.emit('call-user', { to_user_id: calleeId, from_user_id: currentUserId });
+  statusText.textContent = "Calling...";
+}
+
+// Incoming call
+socket.on('incoming-call', async (data) => {
+  if (data.to_user_id === currentUserId) {
+    statusText.textContent = `${data.from_user_name} is calling...`;
+    incomingControls.classList.remove('d-none');
+    outgoingControls.classList.add('d-none');
+
+    acceptBtn.onclick = async () => {
+      localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      peerConnection = new RTCPeerConnection(servers);
+      localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+      peerConnection.ontrack = e => {
+        const audio = document.createElement('audio');
+        audio.srcObject = e.streams[0];
+        audio.autoplay = true;
+        document.body.appendChild(audio);
+      };
+
+      peerConnection.onicecandidate = e => {
+        if (e.candidate) {
+          socket.emit('webrtc-ice-candidate', { to_user_id: data.from_user_id, candidate: e.candidate });
+        }
+      };
+
+      socket.emit('accept-call', { from_user_id: data.from_user_id });
+      incomingControls.classList.add('d-none');
+      outgoingControls.classList.remove('d-none');
+      statusText.textContent = "Connected";
+    };
+
+    rejectBtn.onclick = () => {
+      socket.emit('reject-call', { from_user_id: data.from_user_id });
+      window.location.href = '/chat';
+    };
+  }
+});
+
+// Offer/Answer flow
+socket.on('call-accepted', async (data) => {
+  const offer = await peerConnection.createOffer();
+  await peerConnection.setLocalDescription(offer);
+  socket.emit('webrtc-offer', { to_user_id: calleeId, offer });
+});
+
+socket.on('webrtc-offer', async (data) => {
+  peerConnection = new RTCPeerConnection(servers);
+  await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+  const answer = await peerConnection.createAnswer();
+  await peerConnection.setLocalDescription(answer);
+  socket.emit('webrtc-answer', { to_user_id: data.from_user_id, answer });
+});
+
+socket.on('webrtc-answer', async (data) => {
+  await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+  statusText.textContent = "Connected";
+});
+
+socket.on('webrtc-ice-candidate', data => {
+  if (peerConnection) peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+});
+
+endCallBtn.addEventListener('click', () => {
+  socket.emit('end-call', { to_user_id: calleeId });
+  if (peerConnection) peerConnection.close();
+  if (localStream) localStream.getTracks().forEach(t => t.stop());
+  window.location.href = '/chat';
+});
+
+socket.on('call-ended', () => {
+  if (peerConnection) peerConnection.close();
+  if (localStream) localStream.getTracks().forEach(t => t.stop());
+  statusText.textContent = "Call ended.";
+  setTimeout(() => window.location.href = '/chat', 1000);
+});
+
+// Start the outgoing call immediately
+startCall();
+</script>
+{% endblock %}

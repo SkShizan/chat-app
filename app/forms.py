@@ -47,4 +47,3 @@ class CreateGroupForm(FlaskForm):
 class MessageForm(FlaskForm):
     content = StringField('Message', validators=[DataRequired()])
     submit = SubmitField('Send')
-

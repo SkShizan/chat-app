@@ -45,12 +45,12 @@ def send_verification_email(user, otp):
 def register():
     if current_user.is_authenticated:
         return redirect(url_for('chat.index'))
-    
+
     form = RegistrationForm()
-    
+
     if form.validate_on_submit():
         # --- ★★★ LOGIC MOVED FROM FORMS.PY TO HERE ★★★ ---
-        
+
         # 1. Check for disposable email
         if is_disposable(form.email.data):
             flash('Disposable email addresses are not allowed.', 'danger')
@@ -58,7 +58,7 @@ def register():
 
         # 2. Check if email exists
         user_by_email = User.query.filter_by(email=form.email.data).first()
-        
+
         # 3. Check if username exists
         user_by_username = User.query.filter_by(username=form.username.data).first()
 
@@ -75,18 +75,18 @@ def register():
                     if user_by_username and user_by_username.email != user_by_email.email:
                         flash('That username is already taken by another account. Please choose a different one.', 'danger')
                         return render_template('auth/register.html', title='Register', form=form)
-                        
+
                     user = user_by_email # Use the existing unverified user
                     user.username = form.username.data
                     user.name = form.name.data
                     user.set_password(form.password.data) # Update their password
-                    
+
                     otp = user.generate_otp() # Generate a new OTP
                     db.session.commit() # Save the new password and OTP
-                    
+
                     send_verification_email(user, otp)
                     flash('This email is already registered. A new verification code has been sent.', 'info')
-                    
+
                     # Redirect to the OTP page
                     return redirect(url_for('auth.verify_otp', email=user.email))
 
@@ -100,7 +100,7 @@ def register():
             # Case 3: Email is new, but username is taken by a verified user.
             flash('That username is already taken. Please choose a different one.', 'danger')
             return render_template('auth/register.html', title='Register', form=form)
-            
+
         # --- ★★★ END OF NEW LOGIC ★★★ ---
 
         # If we are here, it's a completely new user
@@ -113,17 +113,17 @@ def register():
                 is_active=False # User is inactive until OTP is verified
             )
             user.set_password(form.password.data)
-            
+
             otp = user.generate_otp()
             db.session.add(user)
             db.session.commit()
-            
+
             send_verification_email(user, otp)
             flash('Registration successful! A 6-digit OTP has been sent to your email.', 'success')
-            
+
             # Redirect to the OTP verification page
             return redirect(url_for('auth.verify_otp', email=user.email))
-        
+
         except Exception as e:
             db.session.rollback()
             current_app.logger.error(f"Registration or email sending failed: {e}")
@@ -148,7 +148,7 @@ def verify_otp():
     if not user:
         flash('User not found. Please register.', 'danger')
         return redirect(url_for('auth.register'))
-        
+
     if user.is_verified:
         flash('Your account is already verified. Please log in.', 'info')
         return redirect(url_for('auth.login'))
@@ -163,7 +163,7 @@ def verify_otp():
             return redirect(url_for('auth.login'))
         else:
             flash('Invalid or expired OTP. Please try again.', 'danger')
-            
+
     return render_template('auth/verify_otp.html', title='Verify Account', form=form, email=email)
 
 
@@ -174,7 +174,7 @@ def resend_otp(email):
         return redirect(url_for('chat.index'))
 
     user = User.query.filter_by(email=email).first_or_404()
-    
+
     if user.is_verified:
         flash('This account is already verified. Please log in.', 'info')
         return redirect(url_for('auth.login'))
@@ -196,7 +196,7 @@ def resend_otp(email):
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('chat.index'))
-    
+
     form = LoginForm()
 
     if form.validate_on_submit():
@@ -237,4 +237,3 @@ def logout():
     logout_user()
     flash('You have been logged out.', 'info')
     return redirect(url_for('auth.login'))
-

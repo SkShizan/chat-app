@@ -7,6 +7,19 @@
 {% endblock %}
 
 {% block content %}
+<!-- 
+  UI ARCHITECT'S NOTE (10.1):
+  This is the "Zenith UI" (9.7) applied to the active chat room.
+  
+  1.  LAYOUT: Deleted the "floating card". This is a 100vh, 2-column layout.
+  2.  PALETTE: DELETED the "creamy" theme. This file now inherits the
+      "god-level" palette from base.html.
+  3.  UI: Sidebar/Header/Footer are WHITE. Chat background is LIGHT STONE.
+  4.  BUBBLES: "Sent" is DEEP TEAL. "Received" is WHITE. This is the 
+      "god-level" standard.
+  5.  BG: Added a subtle, professional "icony" SVG background as requested.
+  6.  NAVBAR: Hidden via CSS for a true full-screen "god-level" app experience.
+-->
 <style>
     /* We are inheriting all :root variables from base.html (9.7).
        The old "creamy" palette is GONE.
@@ -527,14 +540,20 @@
     }
 </style>
 
+<!-- 
+  This outer wrapper is for the mobile view toggle.
+  All HTML, IDs, and Jinja logic are preserved.
+-->
 <div id="chat-page-wrapper">
     <div class="chat-container">
         <aside class="sidebar">
             <div class="sidebar-header">
                 <h2>Messenger</h2>
+                <!-- Mobile: This button now shows the chat window -->
                 <a href="#" class="btn-icon-header d-md-none" id="show-chat-btn" title="Show Chat">
                     <i class="bi bi-chat-dots-fill"></i>
                 </a>
+                <!-- Desktop: Back to directory -->
                 <a href="{{ url_for('chat.index') }}" class="btn-icon-header d-none d-md-block" title="Back to Directory">
                     <i class="bi bi-person-lines-fill fs-5"></i>
                 </a>
@@ -589,6 +608,7 @@
         <main class="chat-window" id="chat-window">
             <div class="chat-header d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center">
+                    <!-- Mobile: This button now shows the sidebar -->
                     <a href="#" class="btn btn-sm border-0 text-dark d-md-none me-2" id="show-sidebar-btn" title="Back to Chats">
                         <i class="bi bi-arrow-left fs-5"></i>
                     </a>
@@ -618,13 +638,10 @@
                 </div>
                 
                 <div class="d-flex align-items-center gap-2">
-                    <button class="btn btn-sm btn-danger d-none" id="reset-keys-btn" title="Reset Encryption Keys">
-                        <i class="bi bi-shield-x"></i>
-                    </button>
-                    
                     <button class="btn btn-sm btn-outline-secondary" id="start-selection-btn" title="Select Messages">
                         <i class="bi bi-check-square"></i>
                     </button>
+                    <!-- More options (e.g., group info) could go here -->
                 </div>
             </div>
 
@@ -646,11 +663,8 @@
                                class="message-attachment-link {% if msg.attachment.viewed and msg.sender_id != current_user.id %}attachment-viewed{% endif %}">
                                 <i class="bi bi-file-earmark-arrow-down me-2"></i> {{ msg.attachment.filename }}
                             </a>
-                            
                             {% else %}
-                            <div class="encrypted-content" data-message-id="{{ msg.id }}">
-                                <i class="bi bi-lock-fill" style="font-size: 0.8rem;"></i>
-                            </div>
+                            {{ msg.content | safe }}
                             {% endif %}
                         </div>
                     </div>
@@ -686,6 +700,7 @@
     </div>
 </div>
 
+<!-- Forward Modal (Unchanged) -->
 <div class="modal fade" id="forward-modal" tabindex="-1" aria-labelledby="forwardModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
@@ -727,602 +742,446 @@
 {% block scripts %}
 {{ super() }}
 <script>
+    // --- ★★★ THIS IS THE FINAL FIX FOR MULTIPLE MESSAGES/UPLOADS ★★★ ---
+    // This `if` check prevents the entire script from running more than ONCE,
+    // even if the page hot-reloads. This stops all duplicate listeners.
     if (!window.chatScriptLoaded) {
-        window.chatScriptLoaded = true;
+        window.chatScriptLoaded = true; // Set the flag
 
-        if (typeof io === 'undefined') {
-            console.error('Socket.IO client library not loaded. Make sure base.html includes it.');
-        } else {
+        // ★★★ BUG FIX: REMOVED DOMContentLoaded WRAPPER ★★★
+        // The script is at the end of the <body>, so the DOM is already loaded.
+        // document.addEventListener('DOMContentLoaded', function () { // <-- DELETED
 
-            // --- Part 1: Chat Variables ---
-            const socket = io();
-            const room_id = "{{ active_room.id }}";
-            const current_user_id = {{ current_user.id }};
-            const chat_partner_id = {{ chat_partner.id if chat_partner else 'null' }};
-            const room_type = "{{ active_room.room_type }}";
-            const current_user_name = "{{ current_user.name }}";
+            // Ensure socket.io is loaded from base.html
+            if (typeof io === 'undefined') {
+                console.error('Socket.IO client library not loaded. Make sure base.html includes it.');
+            } else {
+                const socket = io();
+                const room_id = "{{ active_room.id }}";
+                const current_user_id = {{current_user.id}};
+                const chat_partner_id = {{chat_partner.id if chat_partner else 'null' }};
+                const room_type = "{{ active_room.room_type }}";
+                const current_user_name = "{{ current_user.name }}";
 
-            const messagesContainer = document.getElementById('chat-messages');
-            const statusElement = document.getElementById('chat-partner-status');
-            const originalStatus = statusElement ? statusElement.textContent.trim() : 'Offline';
-            const input = document.getElementById('message-input');
-            const attachButton = document.getElementById('attach-button');
-            const fileInput = document.getElementById('file-input');
-            const form = document.getElementById('message-form');
+                const messagesContainer = document.getElementById('chat-messages');
+                const statusElement = document.getElementById('chat-partner-status');
+                const originalStatus = statusElement ? statusElement.textContent.trim() : 'Offline';
+                const input = document.getElementById('message-input');
+                const attachButton = document.getElementById('attach-button');
+                const fileInput = document.getElementById('file-input');
+                const form = document.getElementById('message-form');
 
-            let isInSelectionMode = false;
-            let selectedMessageIds = [];
-            const chatWindow = document.getElementById('chat-window');
-            const selectionBar = document.getElementById('selection-bar');
-            const startSelectionBtn = document.getElementById('start-selection-btn');
-            const cancelSelectionBtn = document.getElementById('cancel-selection-btn');
-            const forwardSelectionBtn = document.getElementById('forward-selection-btn');
-            const selectionCount = document.getElementById('selection-count');
-            const forwardListContainer = document.getElementById('forward-list-container');
+                // --- START: MODIFIED FOR MULTI-FORWARD ---
 
+                // --- State Management Variables ---
+                let isInSelectionMode = false;
+                let selectedMessageIds = [];
 
-            // --- Part 2: Crypto Helpers ---
-            function ab_to_b64(arrayBuffer) {
-                return btoa(String.fromCharCode.apply(null, new Uint8Array(arrayBuffer)));
-            }
+                // --- DOM Elements for Selection ---
+                const chatWindow = document.getElementById('chat-window');
+                const selectionBar = document.getElementById('selection-bar');
+                const startSelectionBtn = document.getElementById('start-selection-btn');
+                const cancelSelectionBtn = document.getElementById('cancel-selection-btn');
+                const forwardSelectionBtn = document.getElementById('forward-selection-btn');
+                const selectionCount = document.getElementById('selection-count');
+                const forwardListContainer = document.getElementById('forward-list-container');
 
-            function b64_to_ab(base64) {
-                const binary_string = window.atob(base64);
-                const len = binary_string.length;
-                const bytes = new Uint8Array(len);
-                for (let i = 0; i < len; i++) {
-                    bytes[i] = binary_string.charCodeAt(i);
-                }
-                return bytes.buffer;
-            }
-
-            const cryptoStore = {
-                // We now save keys based on a *device ID*
-                async saveKey(deviceId, name, key) {
-                    const jwk = await window.crypto.subtle.exportKey("jwk", key);
-                    const keyName = `e2ee_dev_${deviceId}_${name}`;
-                    localStorage.setItem(keyName, JSON.stringify(jwk));
-                    console.warn(`Saved ${keyName}. Using localStorage is insecure.`);
-                },
-
-                // We now load keys based on a *device ID*
-                async loadKey(deviceId, name) {
-                    const keyName = `e2ee_dev_${deviceId}_${name}`;
-                    const jwkString = localStorage.getItem(keyName);
-                    if (!jwkString) return null;
-                    
-                    const jwk = JSON.parse(jwkString);
-                    const usage = (name === 'privateKey') ? ["decrypt"] : ["encrypt"];
-                    return await window.crypto.subtle.importKey(
-                        "jwk", jwk, { name: "RSA-OAEP", hash: "SHA-256" }, true, usage
-                    );
-                },
-                
-                // This helper just generates keys, doesn't save
-                async generateKeys() {
-                    return await window.crypto.subtle.generateKey(
-                        { name: "RSA-OAEP", modulusLength: 2048, publicExponent: new Uint8Array([0x01, 0x00, 0x01]), hash: "SHA-256" },
-                        true, ["encrypt", "decrypt"]
-                    );
-                },
-
-                async encryptText(text, publicKey) {
-                    const encoded = new TextEncoder().encode(text);
-                    return await window.crypto.subtle.encrypt({ name: "RSA-OAEP" }, publicKey, encoded);
-                },
-
-                async decryptText(data, privateKey) {
-                    const decrypted = await window.crypto.subtle.decrypt({ name: "RSA-OAEP" }, privateKey, data);
-                    return new TextDecoder().decode(decrypted);
-                }
-            };
-            
-            // --- Part 3: E2EE State & Init Function ---
-            let myDeviceId = localStorage.getItem('e2ee_device_id');
-            let myPrivateKey = null;
-            let roomKeyBundle = {}; // This will hold the {user_id: [device_keys]} map
-            let cryptoReady = false;
-
-            async function initCrypto() {
-                console.log("Initializing Multi-Device E2EE...");
-                
-                try {
-                    // --- Step 1: Get or Create This Device's Identity ---
-                    if (myDeviceId) {
-                        myPrivateKey = await cryptoStore.loadKey(myDeviceId, 'privateKey');
-                        if (!myPrivateKey) {
-                            console.warn("Device ID found, but no private key. Forcing re-registration.");
-                            myDeviceId = null; // Force re-gen
-                        } else {
-                            console.log(`Loaded key for existing device ID: ${myDeviceId}`);
-                        }
+                // --- State Helper Functions ---
+                function updateSelectionCount() {
+                    if (selectionCount) {
+                        selectionCount.textContent = `${selectedMessageIds.length} Selected`;
                     }
+                    if (forwardSelectionBtn) {
+                        forwardSelectionBtn.disabled = selectedMessageIds.length === 0;
+                    }
+                }
 
-                    if (!myDeviceId) {
-                        console.log("No device ID, generating new identity...");
-                        const keyPair = await cryptoStore.generateKeys();
-                        myPrivateKey = keyPair.privateKey;
-                        
-                        const exportedPublicKey = await window.crypto.subtle.exportKey("jwk", keyPair.publicKey);
-                        
-                        // Register this new device with the server
-                        const response = await fetch('/chat/register-device', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRFToken': document.querySelector("input[name='csrf_token']").value
-                            },
-                            body: JSON.stringify({ 
-                                public_key_jwk: exportedPublicKey,
-                                device_name: navigator.userAgent.substring(0, 100) // Simple device name
-                            })
+                function enterSelectionMode() {
+                    isInSelectionMode = true;
+                    if (chatWindow) {
+                        chatWindow.classList.add('in-selection-mode');
+                    }
+                    updateSelectionCount();
+                }
+
+                function exitSelectionMode() {
+                    isInSelectionMode = false;
+                    if (chatWindow) {
+                        chatWindow.classList.remove('in-selection-mode');
+                    }
+                    selectedMessageIds = [];
+                    // Remove all .selected classes from messages
+                    if (messagesContainer) {
+                        messagesContainer.querySelectorAll('.message.selected').forEach(el => {
+                            el.classList.remove('selected');
                         });
-                        
-                        if (!response.ok) throw new Error('Failed to register device with server.');
-                        
-                        const data = await response.json();
-                        myDeviceId = data.device_id;
-                        
-                        // Now save the keys using the new ID from the server
-                        await cryptoStore.saveKey(myDeviceId, 'privateKey', keyPair.privateKey);
-                        await cryptoStore.saveKey(myDeviceId, 'publicKey', keyPair.publicKey);
-                        localStorage.setItem('e2ee_device_id', myDeviceId);
-                        
-                        console.log(`New device registered with ID: ${myDeviceId}`);
                     }
-
-                    // --- Step 2: Fetch Key Bundle for this room ---
-                    console.log("Fetching key bundle for room...");
-                    const bundleResponse = await fetch(`/chat/get-key-bundle/${room_id}`);
-                    if (!bundleResponse.ok) throw new Error('Failed to fetch room key bundle.');
-                    
-                    const bundleData = await bundleResponse.json();
-                    
-                    // Import all the public keys
-                    roomKeyBundle = {}; // Reset bundle
-                    for (const userId in bundleData) {
-                        roomKeyBundle[userId] = [];
-                        for (const device of bundleData[userId]) {
-                            roomKeyBundle[userId].push({
-                                device_id: device.device_id,
-                                publicKey: await window.crypto.subtle.importKey(
-                                    "jwk", device.public_key, { name: "RSA-OAEP", hash: "SHA-256" }, true, ["encrypt"]
-                                )
-                            });
-                        }
-                    }
-                    console.log("Room key bundle loaded and imported.");
-
-                    // --- Step 3: Enable UI ---
-                    cryptoReady = true;
-                    if (input) input.disabled = false;
-                    if (form) form.querySelector('button[type="submit"]').disabled = false;
-                    
-                    // --- Step 4: Return key for history decryption ---
-                    return myPrivateKey;
-
-                } catch (err) {
-                    console.error("Critical crypto init failed:", err);
-                    if (input) {
-                        input.placeholder = `CRITICAL: Encryption failed to initialize.`;
-                        input.disabled = true;
-                    }
-                    if (form) form.querySelector('button[type="submit"]').disabled = true;
-                    return null;
-                }
-            }
-            
-            // --- Part 4: Chat Functions ---
-
-            // (Selection functions... unchanged)
-            function updateSelectionCount() {
-                if (selectionCount) selectionCount.textContent = `${selectedMessageIds.length} Selected`;
-                if (forwardSelectionBtn) forwardSelectionBtn.disabled = selectedMessageIds.length === 0;
-            }
-            function enterSelectionMode() {
-                isInSelectionMode = true;
-                if (chatWindow) chatWindow.classList.add('in-selection-mode');
-                updateSelectionCount();
-            }
-            function exitSelectionMode() {
-                isInSelectionMode = false;
-                if (chatWindow) chatWindow.classList.remove('in-selection-mode');
-                selectedMessageIds = [];
-                if (messagesContainer) {
-                    messagesContainer.querySelectorAll('.message.selected').forEach(el => el.classList.remove('selected'));
-                }
-            }
-            function toggleMessageSelection(messageElement) {
-                const msgId = messageElement.dataset.messageId;
-                if (!msgId) return; 
-                const index = selectedMessageIds.indexOf(msgId);
-                if (index > -1) {
-                    selectedMessageIds.splice(index, 1);
-                    messageElement.classList.remove('selected');
-                } else {
-                    selectedMessageIds.push(msgId);
-                    messageElement.classList.add('selected');
-                }
-                updateSelectionCount();
-            }
-            if (startSelectionBtn) startSelectionBtn.addEventListener('click', enterSelectionMode);
-            if (cancelSelectionBtn) cancelSelectionBtn.addEventListener('click', exitSelectionMode);
-
-            // (scrollToBottom... unchanged)
-            function scrollToBottom() {
-                if (messagesContainer) {
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                }
-            }
-
-            // (addMessageToUI... unchanged)
-            function addMessageToUI(msg, isSent) {
-                if (!messagesContainer) return;
-                const item = document.createElement('div');
-                item.className = 'message ' + (isSent ? 'sent' : 'received');
-                if (msg.id) item.dataset.messageId = msg.id;
-                const bubble = document.createElement('div');
-                bubble.className = 'message-bubble';
-                if (msg.id) bubble.id = 'message-' + msg.id;
-                if (!isSent && msg.room_type === 'group' && msg.sender_name) {
-                    const senderNameDiv = document.createElement('div');
-                    senderNameDiv.className = 'message-sender';
-                    senderNameDiv.textContent = msg.sender_name;
-                    const colors = ['#016B61', '#3B82F6', '#92400E', '#7C3AED'];
-                    senderNameDiv.style.color = colors[msg.sender_id % colors.length];
-                    bubble.appendChild(senderNameDiv);
-                }
-                const content = document.createElement('div');
-                if (msg.attachment) {
-                    const link = document.createElement('a');
-                    link.href = `/chat/attachment/${msg.attachment.id}`;
-                    link.id = 'attachment-' + msg.attachment.id;
-                    link.className = 'message-attachment-link';
-                    if (msg.attachment.viewed && msg.sender_id !== current_user_id) {
-                        link.classList.add('attachment-viewed');
-                    }
-                    link.innerHTML = `<i class="bi bi-file-earmark-arrow-down me-2"></i> ${msg.attachment.filename}`;
-                    content.appendChild(link);
-                } else {
-                    const urlRegex = /(https?:\/\/[^\s]+)/g;
-                    const tempDiv = document.createElement('div');
-                    tempDiv.textContent = msg.content;
-                    const linkedText = tempDiv.innerHTML.replace(urlRegex, '<a href="$1" target="_blank">$1</a>');
-                    content.innerHTML = linkedText;
-                }
-                bubble.appendChild(content);
-                item.appendChild(bubble);
-                messagesContainer.appendChild(item);
-                setTimeout(scrollToBottom, 0);
-            }
-            
-            // ★★★ MODIFIED: Decrypt History now fetches from the server ★★★
-            async function decryptHistory(privateKey) { 
-                if (!privateKey || !myDeviceId) {
-                    console.error("decryptHistory called without key or device ID.");
-                    return;
                 }
 
-                console.log("Fetching and decrypting message history...");
-                
-                // --- Step 1: Fetch payloads for THIS device ---
-                const response = await fetch(`/chat/get-history-payloads/${room_id}/${myDeviceId}`);
-                if (!response.ok) {
-                    console.error("Failed to fetch history payloads.");
-                    return;
-                }
-                const payloadMap = await response.json();
-                
-                // --- Step 2: Loop through HTML and decrypt ---
-                const messageElements = document.querySelectorAll('.encrypted-content');
-                for (const el of messageElements) {
-                    // ★★★ Find message ID from the element itself ★★★
-                    const msgId = el.dataset.messageId; 
-                    const payload_b64 = payloadMap[msgId];
-                    
-                    if (payload_b64) {
-                        try {
-                            const payload_ab = b64_to_ab(payload_b64);
-                            const decryptedText = await cryptoStore.decryptText(payload_ab, privateKey);
+                function toggleMessageSelection(messageElement) {
+                    const msgId = messageElement.dataset.messageId;
+                    if (!msgId) return; // Not a selectable message
 
-                            const urlRegex = /(https?:\/\/[^\s]+)/g;
-                            const tempDiv = document.createElement('div');
-                            tempDiv.textContent = decryptedText;
-                            const linkedText = tempDiv.innerHTML.replace(urlRegex, '<a href="$1" target="_blank">$1</a>');
-                            
-                            el.innerHTML = linkedText;
-                            el.classList.remove('encrypted-content');
-                        } catch (err) {
-                            console.warn(`Failed to decrypt historical message ${msgId}:`, err.message);
-                            el.innerHTML = "[Failed to decrypt message]";
-                        }
+                    const index = selectedMessageIds.indexOf(msgId);
+                    if (index > -1) {
+                        // Already selected, de-select it
+                        selectedMessageIds.splice(index, 1);
+                        messageElement.classList.remove('selected');
                     } else {
-                        el.innerHTML = "[Message not available on this device]";
+                        // Not selected, select it
+                        selectedMessageIds.push(msgId);
+                        messageElement.classList.add('selected');
                     }
-                }
-            }
-            
-            // --- Part 5: Socket.IO and Event Listeners ---
-
-            socket.on('connect', () => {
-                socket.emit('join', {room: room_id});
-                socket.emit('join', {room: `user_${current_user_id}`});
-            });
-
-            // (Presence/Typing listeners... unchanged)
-            socket.on('user_status_update', (data) => {
-                if (data.user_id == chat_partner_id && statusElement) {
-                    statusElement.textContent = data.status;
-                    statusElement.classList.remove('typing-indicator');
-                }
-            });
-            socket.on('typing_started', (data) => {
-                if (data.user_id == chat_partner_id && statusElement) {
-                    statusElement.textContent = `${data.user_name} is typing...`;
-                    statusElement.classList.add('typing-indicator');
-                }
-            });
-            socket.on('typing_stopped', (data) => {
-                if (data.user_id == chat_partner_id && statusElement) {
-                    statusElement.textContent = originalStatus;
-                    statusElement.classList.remove('typing-indicator');
-                }
-            });
-            if (input) {
-                let typingTimeout;
-                input.addEventListener('input', () => {
-                    clearTimeout(typingTimeout);
-                    socket.emit('start_typing', {room: room_id, user_name: current_user_name});
-                    typingTimeout = setTimeout(() => {
-                        socket.emit('stop_typing', {room: room_id});
-                    }, 2000);
-                });
-            }
-
-            
-            // ★★★ MODIFIED: 'message' listener now checks device ID ★★★
-            socket.on('message', async (msg) => {
-                if (!cryptoReady) {
-                    console.warn("Message received before crypto is ready. Ignoring.");
-                    return; 
+                    updateSelectionCount();
                 }
 
-                // Check for the payload for *this specific device*
-                if (msg.payloads && msg.payloads[myDeviceId]) {
-                    try {
-                        const myPayload_b64 = msg.payloads[myDeviceId];
-                        const myPayload_ab = b64_to_ab(myPayload_b64);
-                        
-                        const decryptedText = await cryptoStore.decryptText(myPayload_ab, myPrivateKey);
-                        
-                        msg.content = decryptedText;
-                        addMessageToUI(msg, false);
-                    } catch (err) {
-                        console.error("Failed to decrypt real-time message:", err);
-                        msg.content = "[Failed to decrypt message]";
-                        addMessageToUI(msg, false);
-                    }
-                } else if (msg.attachment) {
-                     console.log("Received attachment message");
-                     addMessageToUI(msg, msg.sender_id === current_user_id);
-                } else {
-                    console.log("Received message without payload for this device.");
+                // --- Event Listeners for Selection ---
+                if (startSelectionBtn) {
+                    startSelectionBtn.addEventListener('click', enterSelectionMode);
                 }
-            });
-
-            // (Attachment listeners... unchanged)
-            socket.on('attachment_viewed', (data) => {
-                const link = document.getElementById(`attachment-${data.attachment_id}`);
-                if (link) link.classList.add('attachment-viewed');
-            });
-            socket.on('attachment_deleted', function(data) {
-                let attachmentLink = document.getElementById(`attachment-${data.attachment_id}`);
-                if (attachmentLink) {
-                    let contentDiv = attachmentLink.parentElement;
-                    if (contentDiv) contentDiv.textContent = '[Attachment deleted]';
+                if (cancelSelectionBtn) {
+                    cancelSelectionBtn.addEventListener('click', exitSelectionMode);
                 }
-            });
 
-            // ★★★ MODIFIED: 'submit' listener now does the "Fan-Out" ★★★
-            if (form) {
-                form.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    const text = input.value.trim();
-                    
-                    if (text && cryptoReady && roomKeyBundle && myPrivateKey) {
-                        
-                        let device_payloads = {}; // Keyed by device_id
-                        
-                        // Loop through each USER in the room
-                        for (const userId in roomKeyBundle) {
-                            // Loop through each DEVICE for that user
-                            for (const device of roomKeyBundle[userId]) {
-                                try {
-                                    const encryptedBuffer = await cryptoStore.encryptText(text, device.publicKey);
-                                    device_payloads[device.device_id] = ab_to_b64(encryptedBuffer);
-                                } catch (err) {
-                                    console.error(`Failed to encrypt for device ${device.device_id}:`, err);
-                                }
-                            }
-                        }
-                        
-                        // Send the massive payload object
-                        socket.emit('send_message', {
-                            room: room_id,
-                            payloads: device_payloads
-                        });
-
-                        // Optimistic UI update
-                        const optimisticMsg = {
-                            content: text, sender_name: current_user_name, sender_id: current_user_id,
-                            attachment: null, room_type: room_type, id: null
-                        };
-                        addMessageToUI(optimisticMsg, true);
-                        input.value = '';
-                        
-                    } else if (!cryptoReady) {
-                        alert("Cannot send: Encryption keys are not yet loaded.");
-                    }
-                });
-            }
-
-            // (File input... unchanged)
-            if (fileInput) {
-                fileInput.addEventListener('change', () => {
-                    const file = fileInput.files[0];
-                    if (!file) return;
-                    if (file.size > 100 * 1024 * 1024) { alert('File is too large! Max 100MB.'); return; }
-                    const formData = new FormData();
-                    formData.append('file', file);
-                    if (attachButton) { attachButton.style.pointerEvents = 'none'; attachButton.style.opacity = '0.5'; }
-                    if(form) form.querySelector('button[type="submit"]').disabled = true;
-                    if(input) input.placeholder = 'Uploading...';
-                    const csrf_token = document.querySelector("input[name='csrf_token']").value;
-                    fetch(`/chat/upload-attachment/${room_id}`, {
-                        method: 'POST', headers: { 'X-CSRFToken': csrf_token }, body: formData
-                    }).then(res => {
-                        if (!res.ok) return res.text().then(text => { throw new Error('Server responded with ' + res.status + ': ' + text) });
-                        return res.json();
-                    }).then(data => {
-                        if (data.error) alert('Upload failed: ' + data.error);
-                    }).catch(err => {
-                        console.error('Upload failed:', err);
-                        alert('Error uploading file. Check the console for details.');
-                    }).finally(() => {
-                        if (attachButton) { attachButton.style.pointerEvents = 'auto'; attachButton.style.opacity = '1'; }
-                        if(form) form.querySelector('button[type="submit"]').disabled = false;
-                        if(input) input.placeholder = 'Type a message...';
-                        fileInput.value = '';
-                    });
-                });
-            }
-            
-            // ★★★ MODIFIED: Forwarding listener now uses the new key bundle ★★★
-            if (forwardListContainer) {
-                forwardListContainer.addEventListener('click', async (e) => {
-                    const target = e.target.closest('.forward-target');
-                    if (!target) return;
-                    const destinationRoomId = target.dataset.roomId;
-                    
-                    if (isInSelectionMode && selectedMessageIds.length > 0) {
-                        const modalContent = target.closest('.modal-content');
-                        if(modalContent) modalContent.style.pointerEvents = 'none';
-                        target.innerHTML = 'Forwarding...';
-                        try {
-                            // 1. Get key bundle for the DESTINATION room
-                            const response = await fetch(`/chat/get-key-bundle/${destinationRoomId}`);
-                            if (!response.ok) throw new Error('Could not fetch keys for destination room.');
+                // --- Combined Click Handler for Message Area ---
+                if (messagesContainer) {
+                    messagesContainer.addEventListener('click', function(e) {
+                        if (isInSelectionMode) {
+                            // --- SELECTION MODE ---
+                            e.preventDefault();
+                            e.stopPropagation(); // Stop other listeners
                             
-                            const bundleData = await response.json();
-                            let destinationKeyMap = {}; // We'll flat-map this
-                            
-                            for (const userId in bundleData) {
-                                for (const device of bundleData[userId]) {
-                                    destinationKeyMap[device.device_id] = await window.crypto.subtle.importKey(
-                                        "jwk", device.public_key, { name: "RSA-OAEP", hash: "SHA-256" }, true, ["encrypt"]
-                                    );
-                                }
+                            const messageElement = e.target.closest('.message');
+                            if (messageElement) {
+                                toggleMessageSelection(messageElement);
                             }
-
-                            // 2. Loop through selected messages
-                            let forwardedCount = 0;
-                            for (const msgId of selectedMessageIds) {
-                                const messageBubble = document.getElementById(`message-${msgId}`);
-                                if (!messageBubble) continue;
-                                // Find the content div, which might be the div.encrypted-content
-                                // or the div that *was* .encrypted-content
-                                const contentDiv = messageBubble.querySelector('div:not(.message-sender)');
-                                
-                                if (contentDiv && !contentDiv.querySelector('a.message-attachment-link')) {
-                                    const textToForward = `[Forwarded]: ${contentDiv.textContent}`;
-                                    
-                                    // 3. Re-encrypt for ALL devices in new room
-                                    let device_payloads = {};
-                                    for (const deviceId in destinationKeyMap) {
-                                        const publicKey = destinationKeyMap[deviceId];
-                                        const encryptedBuffer = await cryptoStore.encryptText(textToForward, publicKey);
-                                        device_payloads[deviceId] = ab_to_b64(encryptedBuffer);
-                                    }
-                                    
-                                    // 4. Send as a NEW message
-                                    socket.emit('send_message', {
-                                        room: destinationRoomId,
-                                        payloads: device_payloads
+                        } 
+                        // --- ATTACHMENT VIEW TRACKING ---
+                        else {
+                            const link = e.target.closest('.message-attachment-link');
+                            if (link && !link.classList.contains('attachment-viewed')) {
+                                const attachmentId = link.id.split('-')[1];
+                                const message = link.closest('.message');
+                                // Only track for *received* messages
+                                if (message && message.classList.contains('received')) {
+                                    socket.emit('viewed_attachment', { 
+                                        attachment_id: attachmentId, 
+                                        room_id: room_id 
                                     });
-                                    forwardedCount++;
+                                    link.classList.add('attachment-viewed'); // Optimistic update
                                 }
                             }
-                            alert(`${forwardedCount} text message(s) forwarded!`);
-                        } catch (err) {
-                            console.error("Forwarding failed:", err);
-                            alert(`Error: Could not forward messages. ${err.message}`);
-                        } finally {
-                            const modal = document.getElementById('forward-modal');
-                            if (modal) { const modalInstance = bootstrap.Modal.getInstance(modal); if (modalInstance) modalInstance.hide(); }
-                            if(modalContent) modalContent.style.pointerEvents = 'auto';
-                            exitSelectionMode();
                         }
-                    }
-                });
-            }
-
-            // (Other UI Listeners... unchanged)
-            const chatSearchInput = document.getElementById('chatSearchInput');
-            const chatList = document.getElementById('chatList');
-            const chatListItems = chatList ? chatList.querySelectorAll('li.list-item') : [];
-            const noResultsMessage = document.getElementById('noResultsMessage');
-            if (chatSearchInput) {
-                chatSearchInput.addEventListener('input', function(e) { /* ... */ });
-            }
-            const chatPageWrapper = document.getElementById('chat-page-wrapper');
-            const showSidebarBtn = document.getElementById('show-sidebar-btn');
-            const showChatBtn = document.getElementById('show-chat-btn');
-            if (showSidebarBtn) {
-                showSidebarBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    if (chatPageWrapper) chatPageWrapper.classList.add('mobile-sidebar-visible');
-                });
-            }
-            if (showChatBtn) {
-                showChatBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    if (chatPageWrapper) chatPageWrapper.classList.remove('mobile-sidebar-visible');
-                });
-            }
-            if (window.innerWidth <= 768) {
-                document.querySelectorAll('.sidebar-list .list-item a').forEach(link => {
-                    link.addEventListener('click', (e) => {
-                        if (chatPageWrapper) chatPageWrapper.classList.remove('mobile-sidebar-visible');
                     });
-                });
-            }
-            
-            
-            // --- ★★★ MODIFIED: Call the init function at the end ★★★ ---
-            if(input) input.disabled = true;
-            if(form) form.querySelector('button[type="submit"]').disabled = true;
-            
-            // We get the privateKey back from init
-            initCrypto().then(async (privateKey) => {
-                console.log("Crypto init finished.");
-                
-                if (privateKey) {
-                    // Pass the key directly to decrypt history
-                    await decryptHistory(privateKey);
-                } else {
-                    console.error("Crypto init failed, cannot decrypt history.");
                 }
-                
-                // Scroll to bottom *after* history is rendered
+
+                // --- Combined Click Handler for Forward Modal ---
+                if (forwardListContainer) {
+                    forwardListContainer.addEventListener('click', function (e) {
+                        const target = e.target.closest('.forward-target');
+                        if (!target) return;
+                        
+                        const destinationRoomId = target.dataset.roomId;
+
+                        if (isInSelectionMode) {
+                            // --- MULTI-FORWARD ---
+                            if (selectedMessageIds.length > 0) {
+                                socket.emit('forward_multiple_messages', {
+                                    original_message_ids: selectedMessageIds,
+                                    destination_room_id: destinationRoomId
+                                });
+                            }
+                            exitSelectionMode(); // Exit mode after forwarding
+                        }
+                    });
+                }
+                // --- END: ADDED FOR MULTI-FORWARD ---
+
+
+                // --- Scroll to bottom
+                function scrollToBottom() {
+                    if (messagesContainer) {
+                        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    }
+                }
                 scrollToBottom();
 
-            }).catch(err => {
-                // This catch is for if the .then() block itself fails
-                console.error("Error during history decryption:", err);
-            });
+                // --- Add message to UI
+                function addMessageToUI(msg, isSent) {
+                    if (!messagesContainer) return;
 
-        } // End of 'if (typeof io !== 'undefined')' check
+                    const item = document.createElement('div');
+                    item.className = 'message ' + (isSent ? 'sent' : 'received');
+                    
+                    if (msg.id) {
+                        item.dataset.messageId = msg.id;
+                    }
+
+                    const bubble = document.createElement('div');
+                    bubble.className = 'message-bubble';
+                    if (msg.id) {
+                        bubble.id = 'message-' + msg.id;
+                    }
+
+                    // --- Sender (for group only) ---
+                    if (!isSent && msg.room_type === 'group' && msg.sender_name) {
+                        const senderNameDiv = document.createElement('div');
+                        senderNameDiv.className = 'message-sender';
+                        senderNameDiv.textContent = msg.sender_name;
+                        // Simple color logic
+                        const colors = ['#016B61', '#3B82F6', '#92400E', '#7C3AED'];
+                        senderNameDiv.style.color = colors[msg.sender_id % colors.length];
+                        bubble.appendChild(senderNameDiv);
+                    }
+
+                    const content = document.createElement('div');
+                    if (msg.attachment) {
+                        const link = document.createElement('a');
+                        link.href = `/chat/attachment/${msg.attachment.id}`;
+                        link.id = 'attachment-' + msg.attachment.id;
+                        link.className = 'message-attachment-link';
+                        if (msg.attachment.viewed && msg.sender_id !== current_user_id) {
+                            link.classList.add('attachment-viewed');
+                        }
+                        link.innerHTML = `<i class="bi bi-file-earmark-arrow-down me-2"></i> ${msg.attachment.filename}`;
+                        content.appendChild(link);
+                    } else {
+                        // Auto-link URLs in messages
+                        const urlRegex = /(https?:\/\/[^\s]+)/g;
+                        // Use .textContent to prevent XSS, then replace
+                        const tempDiv = document.createElement('div');
+                        tempDiv.textContent = msg.content;
+                        const linkedText = tempDiv.innerHTML.replace(urlRegex, '<a href="$1" target="_blank">$1</a>');
+                        content.innerHTML = linkedText;
+                    }
+
+                    bubble.appendChild(content);
+                    item.appendChild(bubble);
+                    messagesContainer.appendChild(item);
+
+                    setTimeout(scrollToBottom, 0);
+                }
+
+                // --- Socket.IO Connection ---
+                socket.on('connect', () => {
+                    socket.emit('join', {room: room_id});
+                    socket.emit('join', {room: `user_${current_user_id}`});
+                });
+
+                // --- Presence ---
+                socket.on('user_status_update', (data) => {
+                    if (data.user_id == chat_partner_id && statusElement) {
+                        statusElement.textContent = data.status;
+                        statusElement.classList.remove('typing-indicator');
+                    }
+                });
+
+                // --- Typing ---
+                socket.on('typing_started', (data) => {
+                    if (data.user_id == chat_partner_id && statusElement) {
+                        statusElement.textContent = `${data.user_name} is typing...`;
+                        statusElement.classList.add('typing-indicator');
+                    }
+                });
+
+                socket.on('typing_stopped', (data) => {
+                    if (data.user_id == chat_partner_id && statusElement) {
+                        statusElement.textContent = originalStatus;
+                        statusElement.classList.remove('typing-indicator');
+                    }
+                });
+
+                if (input) {
+                    let typingTimeout;
+                    input.addEventListener('input', () => {
+                        clearTimeout(typingTimeout);
+                        socket.emit('start_typing', {room: room_id, user_name: current_user_name});
+                        typingTimeout = setTimeout(() => {
+                            socket.emit('stop_typing', {room: room_id});
+                        }, 2000);
+                    });
+                }
+
+                // --- Message listener ---
+                socket.on('message', (msg) => {
+                    msg.room_type = room_type; // Inject manually if not sent
+
+                    // We check if it's a forward. If it is, we ALWAYS show it.
+                    // Otherwise, we use the old logic to prevent echo.
+                    if (msg.is_forward) {
+                        addMessageToUI(msg, msg.sender_id === current_user_id);
+                    } else if (msg.sender_id !== current_user_id || msg.attachment) {
+                        addMessageToUI(msg, msg.sender_id === current_user_id);
+                    }
+                });
+
+                // --- Attachment viewed ---
+                socket.on('attachment_viewed', (data) => {
+                    const link = document.getElementById(`attachment-${data.attachment_id}`);
+                    if (link) {
+                        link.classList.add('attachment-viewed');
+                    }
+                });
+
+                // --- Attachment deleted (after recipient download) ---
+                socket.on('attachment_deleted', function(data) {
+                    let attachmentLink = document.getElementById(`attachment-${data.attachment_id}`);
+                    if (attachmentLink) {
+                        let contentDiv = attachmentLink.parentElement;
+                        if (contentDiv) {
+                            contentDiv.textContent = '[Attachment deleted]';
+                        }
+                    }
+                });
+
+                // --- Send message ---
+                if (form) {
+                    form.addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        const text = input.value.trim();
+                        if (text) {
+                            const optimisticMsg = {
+                                content: text,
+                                sender_name: current_user_name,
+                                sender_id: current_user_id,
+                                attachment: null,
+                                room_type: room_type,
+                            };
+                            addMessageToUI(optimisticMsg, true);
+                            socket.emit('send_message', {message: text, room: room_id});
+                            input.value = '';
+                        }
+                    });
+                }
+
+                // --- File upload ---
+                if (fileInput) {
+                    fileInput.addEventListener('change', () => {
+                        const file = fileInput.files[0];
+                        if (!file) return;
+                        if (file.size > 100 * 1024 * 1024) { // 100MB limit
+                            alert('File is too large! Max 100MB.');
+                            return;
+                        }
+
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        
+                        if (attachButton) {
+                            attachButton.style.pointerEvents = 'none'; // Disable label clicks
+                            attachButton.style.opacity = '0.5';
+                        }
+                        if(form) {
+                            form.querySelector('button[type="submit"]').disabled = true;
+                        }
+                        if(input) {
+                            input.placeholder = 'Uploading...';
+                        }
+
+                        const csrf_token = document.querySelector("input[name='csrf_token']").value;
+                        fetch(`/chat/upload-attachment/${room_id}`, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': csrf_token
+                            },
+                            body: formData
+                        })
+                            .then(res => {
+                                if (!res.ok) {
+                                    return res.text().then(text => { 
+                                        throw new Error('Server responded with ' + res.status + ': ' + text) 
+                                    });
+                                }
+                                return res.json();
+                            })
+                            .then(data => {
+                                if (data.error) {
+                                    alert('Upload failed: ' + data.error);
+                                }
+                                // Otherwise, message with attachment will be broadcast from server
+                            })
+                            .catch(err => {
+                                console.error('Upload failed:', err);
+                                alert('Error uploading file. Check the console for details.');
+                            })
+                            .finally(() => {
+                                if (attachButton) {
+                                    attachButton.style.pointerEvents = 'auto'; // Re-enable label
+                                    attachButton.style.opacity = '1';
+                                }
+                                if(form) {
+                                    form.querySelector('button[type="submit"]').disabled = false;
+                                }
+                                if(input) {
+                                    input.placeholder = 'Type a message...';
+                                }
+                                fileInput.value = '';
+                            });
+                    });
+                }
+                
+                // --- START: ADDED FOR SIDEBAR SEARCH ---
+                const chatSearchInput = document.getElementById('chatSearchInput');
+                const chatList = document.getElementById('chatList');
+                const chatListItems = chatList ? chatList.querySelectorAll('li.list-item') : [];
+                const noResultsMessage = document.getElementById('noResultsMessage');
+
+                if (chatSearchInput) {
+                    chatSearchInput.addEventListener('input', function(e) {
+                        const searchTerm = e.target.value.toLowerCase();
+                        let visibleCount = 0;
+
+                        if (chatListItems.length > 0) {
+                            chatListItems.forEach(item => {
+                                const searchableText = item.dataset.searchable || '';
+                                if (searchableText.includes(searchTerm)) {
+                                    item.style.display = 'block';
+                                    visibleCount++;
+                                } else {
+                                    item.style.display = 'none';
+                                }
+                            });
+                        }
+
+                        if (noResultsMessage) {
+                            noResultsMessage.style.display = (visibleCount === 0) ? 'block' : 'none';
+                        }
+                    });
+                }
+                // --- END: ADDED FOR SIDEBAR SEARCH ---
+                
+                // --- START: MOBILE VIEW TOGGLE ---
+                const chatPageWrapper = document.getElementById('chat-page-wrapper');
+                const showSidebarBtn = document.getElementById('show-sidebar-btn');
+                const showChatBtn = document.getElementById('show-chat-btn');
+
+                if (showSidebarBtn) {
+                    showSidebarBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        if (chatPageWrapper) chatPageWrapper.classList.add('mobile-sidebar-visible');
+                    });
+                }
+                if (showChatBtn) {
+                    showChatBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        if (chatPageWrapper) chatPageWrapper.classList.remove('mobile-sidebar-visible');
+                    });
+                }
+                // On mobile, clicking a chat in the sidebar should show the chat window
+                if (window.innerWidth <= 768) {
+                    document.querySelectorAll('.sidebar-list .list-item a').forEach(link => {
+                        link.addEventListener('click', (e) => {
+                            // Don't prevent default, just hide the sidebar
+                            if (chatPageWrapper) chatPageWrapper.classList.remove('mobile-sidebar-visible');
+                        });
+                    });
+                }
+                // --- END: MOBILE VIEW TOGGLE ---
+            
+            } // End of the 'if (typeof io !== 'undefined')' check
+        
+        // }); // <-- ★★★ DELETED THE BROKEN DOMContentLoaded WRAPPER ★★★
     
-    } // End of 'if (!window.chatScriptLoaded)' check
+    } // End of the 'if (!window.chatScriptLoaded)' check
 </script>
 {% endblock %}
