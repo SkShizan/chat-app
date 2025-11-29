@@ -52,6 +52,7 @@ VizzChat features a bespoke interface designed for professional use:
 ## 🚀 Quick Start
 
 ### 1. Clone & Setup
+```bash
 git clone [https://github.com/SkShizan/chat-app.git](https://github.com/SkShizan/chat-app.git)
 cd chat-app
 pip install -r requirements.txt
@@ -92,4 +93,7 @@ chat-app/
 ├── migrations/        # Alembic migration scripts
 ├── config.py          # App configuration
 └── run.py             # Entry point
-<p align="center"> Developed by <a href="https://www.google.com/search?q=https://github.com/SkShizan">SkShizan</a> &bull; Licensed under MIT </p>
+```
+<p align="center">
+  Developed by <a href="https://github.com/SkShizan">SkShizan</a> &bull; Licensed under MIT
+</p>
