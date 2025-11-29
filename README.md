@@ -52,7 +52,6 @@ VizzChat features a bespoke interface designed for professional use:
 ## 🚀 Quick Start
 
 ### 1. Clone & Setup
-```bash
 git clone [https://github.com/SkShizan/chat-app.git](https://github.com/SkShizan/chat-app.git)
 cd chat-app
 pip install -r requirements.txt
